@@ -32,9 +32,11 @@ def check_counter():
     global last_counter_value
     while True:
         current_counter_value = button_handler.get_counter()
+
         if current_counter_value != last_counter_value:
             print(f"Counter changed: {current_counter_value}")
             last_counter_value = current_counter_value
+            display.update_text(f"counter: {current_counter_value}", 0, 1)
             
         # Add a small delay to avoid a busy loop
         time.sleep(0.1)
