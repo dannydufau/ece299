@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "uvic")(type "KiCad")(uri "/home/dhole/projects/uvic/ece299/uvic.kicad_sym")(options "")(descr ""))
+)
