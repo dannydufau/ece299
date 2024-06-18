@@ -386,6 +386,14 @@
     [
       "26cce7b5-0449-425b-905b-3af383c44d12",
       "Root"
+    ],
+    [
+      "5b629551-fad5-4a3c-ab87-1016e0378cd1",
+      "amplifierL"
+    ],
+    [
+      "0887f379-3559-4bf0-a3a2-19644d2d196f",
+      "amplifierR"
     ]
   ],
   "text_variables": {}
