@@ -50,6 +50,8 @@ def start_main_menu():
         display_text=("time", "radio")
     )
 
+# TODO(dd): hold button key to reset
+
 menu = start_main_menu()
 menu.start_monitoring()
 
@@ -77,9 +79,7 @@ try:
                     if menu.get_button_state():
                         print("radio button pressed!")
                     utime.sleep(0.1)
-                
-            #menu = start_new_menu()  # Create a new menu instance
-            #menu.start_monitoring()  # Start monitoring the new menu
+            
         utime.sleep(0.1)  # Small delay to avoid busy loop
 except KeyboardInterrupt:
     menu.stop_monitoring()
