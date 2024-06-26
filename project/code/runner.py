@@ -1,5 +1,6 @@
 import utime
 from menu import Menu
+from button import Button
 
 SCREEN_WIDTH = 128
 SCREEN_HEIGHT = 64
@@ -90,6 +91,25 @@ def start_main_menu():
 
 # TODO(dd): hold button key to reset
 
+# TODO
+#fm_radio = Radio(100.3, 2, False)
+
+
+# Callback function for button interrupts
+def button_callback(identity):
+    #fm_radio.adjust_volume(identity)
+    print(f"button_callback called with identity: {identity}")
+
+
+#button_handler = ButtonHandler(button_pin=0, led_pin=15)
+radio_pwr_button = Button(
+    button_pin=0,
+    callback=button_callback,
+    led_pin=15,
+    identity='radio_power'
+)
+
+
 menu = start_main_menu()
 menu.start_monitoring()
 
@@ -138,4 +158,3 @@ try:
 except KeyboardInterrupt:
     menu.stop_monitoring()
     print("Stopped monitoring")
-

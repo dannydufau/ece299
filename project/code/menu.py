@@ -40,6 +40,9 @@ class Menu:
         selectables,
         cursor=">"
     ):
+        self.header = header
+        self.selectables = selectables
+        self.selectables_count = len(selectables)
         self.cursor_icon = cursor
 
         # Initialize clock radio display for SPI
@@ -61,99 +64,77 @@ class Menu:
             pin_switch=encoder_pins[2], 
             led_pin=led_pin, 
             rollover=True, 
-            max=2
+            max=self.selectables_count # modulus rollover 
         )
         
-        self.cursor_position = self.encoder.get_counter()[0]
-        # TODO: don't make this a property, call the method
-        #self.display_text = display_text
-        self.set_display(header, selectables, cursor)
-        
-        self.last_count = self.encoder.get_counter()[0]
+        self.set_display()
+        self.last_count = self.get_cursor_position()
         self.monitor_thread_running = False
         self.stop_event = Event()
-        self.last_button_state = self.encoder.button_last_state
-        self.button_state = self.encoder.button_last_state
+        self.last_button_state = self.get_button_state()
+        self.button_state = self.get_button_state()
 
-    def set_display(self, header, selectables, cursor):
+    def get_button_state(self):
+        #print(f"encoder button pressed {self.encoder.button_last_state}")
+        return self.encoder.button_last_state
+
+    def get_cursor_position(self):
+        current_count = self.encoder.get_counter()[0]
+        current_count -= 1
+        if (current_count < 0):
+            current_count = 0
+        return current_count
+
+    def set_display(self):
         """
         Description: Initializes display from and array of text strings.
             Header is first row.
             Remaining rows are selectable items.
             cursor assigned to selectable item associated with counter.
         """
-        print(f"counter position: {self.cursor_position}")
-        col = 0
-        # TODO: need sanity checks on an array of size 6?
-        self.display.update_text(header, col, 1)
-        self.display.update_text(f"{cursor} {selectables[0]}", col, 2)
-        self.display.update_text(f"{cursor} {selectables[1]}", col, 3)
-        #self.display.update_text(display_text[2], col, 3)
-        #self.display.update_text(display_text[3], col, 4)
-        #self.display.update_text(display_text[4], col, 5)
-        #self.display.update_text(display_text[5], col, 5)
 
-    def set_display_row(self, text, row, col, preserve=True):
-        """
-        Description: takes and array of changes and updates the display with the
-        specified rows.
-        Args:
-          display_text (array): contains rows of text to display (6?)
-          preserve (bool): preserves existing row entries when False, clears
-        """
-        # Initialize the display with static text
-        # TODO: update for the number of lines in display text
-        # text, col, row
-        #self.display.update_text(display_text[0], 2, 1)
-        #self.display.update_text(display_text[1], 2, 2)
-        #self.display.update_text(display_text[2],
-        print(f"set display {text}, {row}, {col}")
-        self.display.update_text(text, col, row)
+        # set the cursor at the encoder position
+        current = self.get_cursor_position()
+        print(f"counter position: {current}")
         
-    def check_counter_and_button(self):
+        # Get a copy of selectables for cursor mutation
+        selectables = list(self.selectables)
+
+        original_text = selectables[current]
+        selectables[current] = f"{self.cursor_icon} {original_text}"
+        
+        # update display
+        col = 0
+        
+        # Update display for the number of selectable items present
+        for i in range(len(selectables)):
+            self.display.update_text(selectables[i], col, i + 2)
+        
+    def track_encoder(self):
         """
-        Description: Tracks for encoder rotations and button presses.
+        Description: Tracks for encoder rotations
         """
 
         while not self.stop_event.is_set():
-            current_count = self.encoder.get_counter()[0]
+            current_count = self.get_cursor_position()
 
             if current_count != self.last_count:
                 print(f"Counter changed: {current_count}")
                 self.last_count = current_count
                 
-                # Update cursor position based on the counter value
-                if current_count == 1:
-                    self.display.update_text(f">{self.display_text[0]}", 0, 1)
-                    self.display.update_text(f" {self.display_text[1]}", 0, 2)
-
-                elif current_count == 2:
-                    self.display.update_text(f">{self.display_text[1]}", 0, 2)
-                    self.display.update_text(f" {self.display_text[0]}", 0, 1)
-            
-            # Check for button press
-            button_state = self.encoder.button_last_state
-            if button_state != self.last_button_state:
-                self.button_state = button_state  # Update the button state in the class
-                if button_state:
-                    if current_count == 1:
-                        self.display.update_text(f"{self.display_text[0]} Selected", 2, 3)
-                    elif current_count == 2:
-                        self.display.update_text(f"{self.display_text[1]} Selected", 2, 3)
-                self.last_button_state = button_state
-
+                self.set_display()
+                
+            #print(f"button state: {self.get_button_state()}\nlast state: {self.last_button_state}")
+                
             # Add a small delay to avoid a busy loop
             time.sleep(0.1)
         print("Thread exiting gracefully")
-
-    def get_button_state(self):
-        return self.button_state
     
     def start_monitoring(self):
         if not self.monitor_thread_running:
             self.monitor_thread_running = True
             self.stop_event.clear()
-            _thread.start_new_thread(self.check_counter_and_button, ())
+            _thread.start_new_thread(self.track_encoder, ())
 
     def stop_monitoring(self):
         self.stop_event.set()
@@ -162,6 +143,7 @@ class Menu:
         self.disable_interrupts()
 
     def disable_interrupts(self):
+        print("disable interrupts called")
         # Disable the interrupts for the encoder pins
         self.encoder.pin_a.irq(handler=None)
         self.encoder.pin_b.irq(handler=None)
