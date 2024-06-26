@@ -5,6 +5,7 @@ import time
 import _thread
 import utime
 
+
 class Event:
     def __init__(self):
         self._lock = _thread.allocate_lock()
@@ -21,6 +22,7 @@ class Event:
     def is_set(self):
         return self._lock.locked()
 
+    
 class Menu:
     def __init__(
         self,
@@ -34,8 +36,12 @@ class Menu:
         dc,
         encoder_pins,
         led_pin,
-        display_text
+        header,
+        selectables,
+        cursor=">"
     ):
+        self.cursor_icon = cursor
+
         # Initialize clock radio display for SPI
         self.display = CR_SPI_Display(
             screen_width=screen_width,
@@ -48,13 +54,6 @@ class Menu:
             dc=dc
         )
 
-        self.display_text = display_text
-
-        # Initialize the display with static text
-        # TODO: update for the number of lines in display text
-        self.display.update_text(self.display_text[0], 2, 1)
-        self.display.update_text(self.display_text[1], 2, 2)
-
         # Create an instance of the RotaryEncoder class
         self.encoder = RotaryEncoder(
             pin_a=encoder_pins[0], 
@@ -64,14 +63,58 @@ class Menu:
             rollover=True, 
             max=2
         )
-
+        
+        self.cursor_position = self.encoder.get_counter()[0]
+        # TODO: don't make this a property, call the method
+        #self.display_text = display_text
+        self.set_display(header, selectables, cursor)
+        
         self.last_count = self.encoder.get_counter()[0]
         self.monitor_thread_running = False
         self.stop_event = Event()
         self.last_button_state = self.encoder.button_last_state
         self.button_state = self.encoder.button_last_state
 
+    def set_display(self, header, selectables, cursor):
+        """
+        Description: Initializes display from and array of text strings.
+            Header is first row.
+            Remaining rows are selectable items.
+            cursor assigned to selectable item associated with counter.
+        """
+        print(f"counter position: {self.cursor_position}")
+        col = 0
+        # TODO: need sanity checks on an array of size 6?
+        self.display.update_text(header, col, 1)
+        self.display.update_text(f"{cursor} {selectables[0]}", col, 2)
+        self.display.update_text(f"{cursor} {selectables[1]}", col, 3)
+        #self.display.update_text(display_text[2], col, 3)
+        #self.display.update_text(display_text[3], col, 4)
+        #self.display.update_text(display_text[4], col, 5)
+        #self.display.update_text(display_text[5], col, 5)
+
+    def set_display_row(self, text, row, col, preserve=True):
+        """
+        Description: takes and array of changes and updates the display with the
+        specified rows.
+        Args:
+          display_text (array): contains rows of text to display (6?)
+          preserve (bool): preserves existing row entries when False, clears
+        """
+        # Initialize the display with static text
+        # TODO: update for the number of lines in display text
+        # text, col, row
+        #self.display.update_text(display_text[0], 2, 1)
+        #self.display.update_text(display_text[1], 2, 2)
+        #self.display.update_text(display_text[2],
+        print(f"set display {text}, {row}, {col}")
+        self.display.update_text(text, col, row)
+        
     def check_counter_and_button(self):
+        """
+        Description: Tracks for encoder rotations and button presses.
+        """
+
         while not self.stop_event.is_set():
             current_count = self.encoder.get_counter()[0]
 
@@ -83,6 +126,7 @@ class Menu:
                 if current_count == 1:
                     self.display.update_text(f">{self.display_text[0]}", 0, 1)
                     self.display.update_text(f" {self.display_text[1]}", 0, 2)
+
                 elif current_count == 2:
                     self.display.update_text(f">{self.display_text[1]}", 0, 2)
                     self.display.update_text(f" {self.display_text[0]}", 0, 1)

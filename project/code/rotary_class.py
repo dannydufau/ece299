@@ -69,6 +69,7 @@ class RotaryEncoder:
         self.pin_switch.irq(trigger=Pin.IRQ_FALLING, handler=self.button_irq)
 
     def get_counter(self):
+        # TODO: check if counter is negative
         return (self.counter, self.direction)
     
     def encoder_irq(self, pin):
@@ -91,6 +92,7 @@ class RotaryEncoder:
             self.button_timer.init(mode=Timer.ONE_SHOT, period=self.button_delay_ms, callback=self.process_button)
 
     def update_counter(self, increment):
+        
         if increment:
             self.counter += 1
             self.direction = "Clockwise"
@@ -107,6 +109,7 @@ class RotaryEncoder:
                     self.counter = self.max
                 else:
                     self.counter = self.min
+
 
     def process_encoder(self, timer):
         """
@@ -176,8 +179,10 @@ class RotaryEncoder:
     def process_button(self, timer):
         button_current_state = self.pin_switch.value() == 0  # ACTIVE LOW
         if button_current_state != self.button_last_state:
-            if button_current_state:  # Button pressed
-                print(f"Button is Pressed at counter: {self.counter}\n")
+            #if button_current_state:  # Button pressed
+            #    print(f"Button is Pressed at counter: {self.counter}\n")
+            #else:
+            #    print("Button unpressed")
             self.button_last_state = button_current_state
         self.button_triggered = False
 
