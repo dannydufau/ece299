@@ -72,6 +72,9 @@ class RotaryEncoder:
         # TODO: check if counter is negative
         return (self.counter, self.direction)
     
+    def get_button_state(self):
+        return self.button_last_state
+        
     def encoder_irq(self, pin):
         """
         Description: Debounce the encoder signal by catching the first detected edge and muting
@@ -179,6 +182,7 @@ class RotaryEncoder:
     def process_button(self, timer):
         button_current_state = self.pin_switch.value() == 0  # ACTIVE LOW
         if button_current_state != self.button_last_state:
+            print(f"encoder button pressed: {button_current_state}")
             #if button_current_state:  # Button pressed
             #    print(f"Button is Pressed at counter: {self.counter}\n")
             #else:
@@ -199,3 +203,4 @@ if __name__ == "__main__":
     while True:
         encoder.toggle_led()
         utime.sleep(1)
+

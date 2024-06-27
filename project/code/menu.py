@@ -1,28 +1,8 @@
 from machine import Pin, Timer
 from display import CR_SPI_Display
-from rotary_class import RotaryEncoder
+from encoder import RotaryEncoder
 import time
-import _thread
-import utime
 
-
-class Event:
-    def __init__(self):
-        self._lock = _thread.allocate_lock()
-        self._lock.acquire()
-
-    def set(self):
-        if not self._lock.locked():
-            self._lock.acquire()
-
-    def clear(self):
-        if self._lock.locked():
-            self._lock.release()
-
-    def is_set(self):
-        return self._lock.locked()
-
-    
 class Menu:
     def __init__(
         self,
@@ -57,7 +37,7 @@ class Menu:
             dc=dc
         )
 
-        # Create an instance of the RotaryEncoder class
+        # Create an instance of the RotaryEncoder
         self.encoder = RotaryEncoder(
             pin_a=encoder_pins[0], 
             pin_b=encoder_pins[1], 
@@ -66,85 +46,101 @@ class Menu:
             rollover=True, 
             max=self.selectables_count # modulus rollover 
         )
-        
-        self.set_display()
-        self.last_count = self.get_cursor_position()
-        self.monitor_thread_running = False
-        self.stop_event = Event()
-        self.last_button_state = self.get_button_state()
-        self.button_state = self.get_button_state()
+        self.last_count = self._get_cursor_position_modulus()
+        self._update_count_and_display(self.last_count)
 
-    def get_button_state(self):
-        #print(f"encoder button pressed {self.encoder.button_last_state}")
-        return self.encoder.button_last_state
-
-    def get_cursor_position(self):
+    def _get_cursor_position_modulus(self):
+        """
+        Currently ignoring direction
+        """
         current_count = self.encoder.get_counter()[0]
         current_count -= 1
-        if (current_count < 0):
+        if current_count < 0:
             current_count = 0
         return current_count
 
-    def set_display(self):
+    def _has_selection_changed(self):
         """
-        Description: Initializes display from and array of text strings.
-            Header is first row.
-            Remaining rows are selectable items.
-            cursor assigned to selectable item associated with counter.
+        Description: selection currently maps to an encoder rotation
         """
-
-        # set the cursor at the encoder position
-        current = self.get_cursor_position()
-        print(f"counter position: {current}")
-        
-        # Get a copy of selectables for cursor mutation
+        count = self.last_count
+        if self._get_cursor_position_modulus() != self.last_count:
+            return True
+        return False
+    
+    def _update_cursor_to_current_selection(self, current_count):
+        # Update cursor to reflect new selection
         selectables = list(self.selectables)
-
-        original_text = selectables[current]
-        selectables[current] = f"{self.cursor_icon} {original_text}"
         
-        # update display
-        col = 0
+        original_text = selectables[current_count]
+        selectables[current_count] = f"{self.cursor_icon} {original_text}"
         
         # Update display for the number of selectable items present
+        col = 0
         for i in range(len(selectables)):
             self.display.update_text(selectables[i], col, i + 2)
         
+    def _update_count_and_display(self, current_count):
+        """
+        Call this to update last_count if user input detected
+        """
+        # Update last_count and cursor to rotated item
+        self.last_count = current_count
+        self._update_cursor_to_current_selection(current_count)
+
+    def _disable_interrupts(self):
+        print("disable interrupts")
+        self.encoder.pin_a.irq(handler=None)
+        self.encoder.pin_b.irq(handler=None)
+        self.encoder.pin_switch.irq(handler=None)
+
+    def poll_selection_change_and_update_display(self):
+        """
+        Check for user input change (encoder rotation) and update the
+        active selection appropriately. Should be called frequently by
+        caller thread.
+        Return (bool): False if a user input has not been detected.
+        """
+        current_count = self._get_cursor_position_modulus()
+        if self._has_selection_changed():
+            self._update_count_and_display(current_count)
+            return True
+        return False
+    
+    def is_encoder_button_pressed(self):
+        return self.encoder.get_button_state()
+    
+    def get_selection(self):
+        return self._get_cursor_position_modulus()
+
+    def stop_menu(self):
+        self._disable_interrupts()
+
+'''
     def track_encoder(self):
         """
-        Description: Tracks for encoder rotations
+        EXPIRED: this consumes the thread.  No while True loops here
+        Description: tracks current position of the encoder and
+            updates display.  We can stop/start polling the encoder position
+            with the tracking property to remap it to a new set of menu
+            'selectables' defined in the menu scheme.
         """
-
-        while not self.stop_event.is_set():
-            current_count = self.get_cursor_position()
+        while self.tracking:
+            current_count = self.get_cursor_position_modulus()
 
             if current_count != self.last_count:
                 print(f"Counter changed: {current_count}")
                 self.last_count = current_count
+                self.update_display()
                 
-                self.set_display()
-                
-            #print(f"button state: {self.get_button_state()}\nlast state: {self.last_button_state}")
-                
-            # Add a small delay to avoid a busy loop
             time.sleep(0.1)
-        print("Thread exiting gracefully")
-    
-    def start_monitoring(self):
-        if not self.monitor_thread_running:
-            self.monitor_thread_running = True
-            self.stop_event.clear()
-            _thread.start_new_thread(self.track_encoder, ())
+        print("Exiting encoder tracking")
 
-    def stop_monitoring(self):
-        self.stop_event.set()
-        self.monitor_thread_running = False
-        time.sleep(0.2)  # Allow time for the thread to exit
-        self.disable_interrupts()
+    def stop_tracking(self):
+        # EXPIRED
+        self.tracking = False
 
-    def disable_interrupts(self):
-        print("disable interrupts called")
-        # Disable the interrupts for the encoder pins
-        self.encoder.pin_a.irq(handler=None)
-        self.encoder.pin_b.irq(handler=None)
-        self.encoder.pin_switch.irq(handler=None)
+    def start_tracking(self):
+        # EXPIRED
+        self.tracking = True
+'''

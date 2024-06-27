@@ -1,12 +1,31 @@
 import utime
 from menu import Menu
 from button import Button
+from thread_manager import ThreadManager
 
 SCREEN_WIDTH = 128
 SCREEN_HEIGHT = 64
 SPI_DEVICE = 0
 
+# Initialize the thread manager
+thread_manager = ThreadManager()
 
+
+# Initialize radio power button
+def initialize_radio_power():
+    def radio_power_button_callback(identity):
+        # Callback function for button interrupts
+        print(f"radio power button called with identity: {identity}")
+
+    button = Button(
+        button_pin=0,
+        callback=radio_power_button_callback,
+        led_pin=15,
+        identity='radio_power'
+    )
+    return button
+
+# Menu configuration 
 def start_time_config():
     return Menu(
         screen_width=SCREEN_WIDTH,
@@ -57,6 +76,7 @@ def start_time_menu():
         selectables=["set time", "set alarm"]
     )    
 
+
 def start_radio_menu():
     return Menu(
         screen_width=SCREEN_WIDTH,
@@ -72,6 +92,7 @@ def start_radio_menu():
         header="Radio Menu",
         selectables=["radio on", "radio off", "scan"]
     )
+
 
 def start_main_menu():
     return Menu(
@@ -89,72 +110,52 @@ def start_main_menu():
         selectables=["time", "radio"]
     )
 
-# TODO(dd): hold button key to reset
 
-# TODO
-#fm_radio = Radio(100.3, 2, False)
+def monitor_encoder_and_menu(menu):
+    while True:
+    
+        # Monitor encoder position and update display
+        menu.poll_selection_change_and_update_display()
+        
+        # Montior for encoder button selection
+        if menu.is_encoder_button_pressed():
+            new_selection = menu.get_selection()
+            print(f"Button pressed, counter value: {new_selection}")
+
+            if new_selection == 0:
+                menu = start_time_menu()
+            elif new_selection == 1:
+                menu = start_radio_menu()
+
+            #menu.start_tracking()
+        
+        utime.sleep(0.1)  # Small delay to avoid busy loop
 
 
-# Callback function for button interrupts
-def button_callback(identity):
-    #fm_radio.adjust_volume(identity)
-    print(f"button_callback called with identity: {identity}")
+def start_monitoring(menu):
+    """
+    Dedicating a thread to monitoring button/encoder changes in
+    association with menu changes.
+    """
+    def target():
+        monitor_encoder_and_menu(menu)
+    thread_manager.start_thread(target)
 
 
-#button_handler = ButtonHandler(button_pin=0, led_pin=15)
-radio_pwr_button = Button(
-    button_pin=0,
-    callback=button_callback,
-    led_pin=15,
-    identity='radio_power'
-)
+def mute():
+    # Alarm and/or radio
 
 
+radio_pwr_button = initialize_radio_power()
 menu = start_main_menu()
-menu.start_monitoring()
+start_monitoring(menu)
 
 try:
     while True:
-        if menu.get_button_state():  # Check if the button is pressed
-            counter_value = menu.get_cursor_position()
-            print(f"Button pressed, counter value: {counter_value}")
+        if radio_pwr_button.button.value() == 0:
+            radio_pwr_button.handle_interrupt(radio_pwr_button.button)
+        utime.sleep(0.1)  # Main loop delay
 
-            menu.stop_monitoring()  # Stop the current menu
-            
-            if counter_value == 0:
-                menu = start_time_menu()
-                menu.start_monitoring()
-                
-                while True:
-                    if menu.get_button_state():
-                        counter_value = menu.get_cursor_position()
-                        print(f"time button pressed, counter value: {counter_value}")
-                        menu.stop_monitoring()
-                        if counter_value == 0:
-                            print("Set the time!")
-                            menu = start_time_config()
-                            menu.start_monitoring()
-                            
-                        elif counter_value == 1:
-                            print("Set the alarm!")
-                            menu = start_alarm_config()
-                            menu.start_monitoring()
-                        else:
-                            print("something unexpected")
-                            
-                    utime.sleep(0.1)
-
-            elif counter_value == 1:
-                menu = start_radio_menu()
-                menu.start_monitoring()
-                
-                while True:
-                    if menu.get_button_state():
-                        print("radio button pressed!")
-                    utime.sleep(0.1)
-            
-        utime.sleep(0.1)  # Small delay to avoid busy loop
-        
 except KeyboardInterrupt:
-    menu.stop_monitoring()
+    menu.stop_menu()
     print("Stopped monitoring")

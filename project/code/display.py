@@ -36,7 +36,6 @@ class CR_SPI_Display:
             baudrate (int): changes to signal per second.
         Returns:
         """
-
         self.baudrate = baudrate
         self.dev = spi_dev
 
