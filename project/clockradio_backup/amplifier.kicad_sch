@@ -1104,15 +1104,15 @@
 	)
 	(hierarchical_label "GND"
 		(shape input)
-		(at 190.5 102.87 270)
+		(at 196.85 99.06 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
-		(uuid "8d05aab7-1fde-4757-bd74-07dffd77e4cc")
+		(uuid "d93940f6-2679-46b7-8aa6-c0dc00a1764f")
 	)
 	(hierarchical_label "IN"
 		(shape input)
@@ -1136,7 +1136,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "41507b9f-5007-4422-8714-c4b04c6114ef")
-		(property "Reference" "#PWR07"
+		(property "Reference" "#PWR014"
 			(at 196.85 109.22 0)
 			(effects
 				(font
@@ -1181,12 +1181,16 @@
 			)
 		)
 		(pin "1"
-			(uuid "93b270a4-2b2e-418d-bb20-3e430f7993ef")
+			(uuid "da2b9f4c-e79d-4dec-9994-53c0b6dc20cd")
 		)
 		(instances
 			(project "clockradio"
 				(path "/26cce7b5-0449-425b-905b-3af383c44d12/0887f379-3559-4bf0-a3a2-19644d2d196f"
 					(reference "#PWR014")
+					(unit 1)
+				)
+				(path "/26cce7b5-0449-425b-905b-3af383c44d12/487c280c-3f8d-4ad3-803c-ea9a94b0d6a2"
+					(reference "#PWR01")
 					(unit 1)
 				)
 			)
@@ -1202,7 +1206,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "59e5c133-9171-4f5d-b779-08b30f58aa4c")
-		(property "Reference" "C3"
+		(property "Reference" "C7"
 			(at 172.72 90.1699 0)
 			(effects
 				(font
@@ -1248,15 +1252,19 @@
 			)
 		)
 		(pin "2"
-			(uuid "fa765690-9c5c-481c-b4f8-a7f18e94eec2")
+			(uuid "fd9bd421-4c70-46b2-8c57-7ba4b1dea078")
 		)
 		(pin "1"
-			(uuid "96b3505e-eb4f-46fb-bfe3-94da65127d5d")
+			(uuid "c4059b72-9644-48e0-9621-4ae4c2582304")
 		)
 		(instances
 			(project "clockradio"
 				(path "/26cce7b5-0449-425b-905b-3af383c44d12/0887f379-3559-4bf0-a3a2-19644d2d196f"
 					(reference "C7")
+					(unit 1)
+				)
+				(path "/26cce7b5-0449-425b-905b-3af383c44d12/487c280c-3f8d-4ad3-803c-ea9a94b0d6a2"
+					(reference "C3")
 					(unit 1)
 				)
 			)
@@ -1272,7 +1280,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "85edec8f-c231-438e-a718-dec2f02a704b")
-		(property "Reference" "R1"
+		(property "Reference" "R3"
 			(at 171.45 97.7899 0)
 			(effects
 				(font
@@ -1290,7 +1298,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0309_L9.0mm_D3.2mm_P12.70mm_Horizontal"
 			(at 167.132 99.06 90)
 			(effects
 				(font
@@ -1318,15 +1326,19 @@
 			)
 		)
 		(pin "2"
-			(uuid "2fcac6ab-e2f8-4ffb-9487-6a9606ccdd02")
+			(uuid "044c5291-286c-4ef6-a911-dc23d5221ec8")
 		)
 		(pin "1"
-			(uuid "fd3d6b98-6012-4860-8ee8-ecbb100294f5")
+			(uuid "f0c9594e-8be8-48c6-8434-aad8adc516c5")
 		)
 		(instances
 			(project "clockradio"
 				(path "/26cce7b5-0449-425b-905b-3af383c44d12/0887f379-3559-4bf0-a3a2-19644d2d196f"
 					(reference "R3")
+					(unit 1)
+				)
+				(path "/26cce7b5-0449-425b-905b-3af383c44d12/487c280c-3f8d-4ad3-803c-ea9a94b0d6a2"
+					(reference "R1")
 					(unit 1)
 				)
 			)
@@ -1342,7 +1354,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "8cd3cb0b-e15b-4dee-8e95-08ed04935515")
-		(property "Reference" "LS1"
+		(property "Reference" "LS2"
 			(at 207.01 87.6299 0)
 			(effects
 				(font
@@ -1388,15 +1400,19 @@
 			)
 		)
 		(pin "2"
-			(uuid "066d79e6-5683-459a-adab-1b19b9f35225")
+			(uuid "15b839fc-010b-4965-ac1f-aac67d6f498e")
 		)
 		(pin "1"
-			(uuid "700a5ea5-ab60-4803-85ed-14b53d412677")
+			(uuid "eac8510f-5f9e-42d7-bcbf-b6b5f0c7ee0d")
 		)
 		(instances
 			(project "clockradio"
 				(path "/26cce7b5-0449-425b-905b-3af383c44d12/0887f379-3559-4bf0-a3a2-19644d2d196f"
 					(reference "LS2")
+					(unit 1)
+				)
+				(path "/26cce7b5-0449-425b-905b-3af383c44d12/487c280c-3f8d-4ad3-803c-ea9a94b0d6a2"
+					(reference "LS1")
 					(unit 1)
 				)
 			)
@@ -1412,7 +1428,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "8fbcbe22-7128-4996-9248-dd5604bf265e")
-		(property "Reference" "C4"
+		(property "Reference" "C8"
 			(at 175.641 80.01 90)
 			(effects
 				(font
@@ -1456,15 +1472,19 @@
 			)
 		)
 		(pin "1"
-			(uuid "3ccd0d27-58fb-48a2-8176-a43e3619cbd5")
+			(uuid "07872848-cb78-45a5-b414-5b31edfbccf7")
 		)
 		(pin "2"
-			(uuid "e2954f46-5587-4511-b682-15cc0c9eea89")
+			(uuid "e9a5b6e8-55e0-4dc0-ac32-2102c5f50862")
 		)
 		(instances
 			(project "clockradio"
 				(path "/26cce7b5-0449-425b-905b-3af383c44d12/0887f379-3559-4bf0-a3a2-19644d2d196f"
 					(reference "C8")
+					(unit 1)
+				)
+				(path "/26cce7b5-0449-425b-905b-3af383c44d12/487c280c-3f8d-4ad3-803c-ea9a94b0d6a2"
+					(reference "C4")
 					(unit 1)
 				)
 			)
@@ -1480,7 +1500,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "d9380ce3-b143-4beb-9368-95f19e4a6f82")
-		(property "Reference" "C1"
+		(property "Reference" "C5"
 			(at 115.951 77.47 90)
 			(effects
 				(font
@@ -1524,15 +1544,19 @@
 			)
 		)
 		(pin "2"
-			(uuid "33394a61-a2f5-4139-88fe-b21490ae7d27")
+			(uuid "ff147c3f-6189-4c52-92a1-3b64e306e515")
 		)
 		(pin "1"
-			(uuid "c75a5b3b-6562-4de0-bbea-dee41b62ffb8")
+			(uuid "d01ba1b4-5fe9-4680-afff-0c4e4937d8ab")
 		)
 		(instances
 			(project "clockradio"
 				(path "/26cce7b5-0449-425b-905b-3af383c44d12/0887f379-3559-4bf0-a3a2-19644d2d196f"
 					(reference "C5")
+					(unit 1)
+				)
+				(path "/26cce7b5-0449-425b-905b-3af383c44d12/487c280c-3f8d-4ad3-803c-ea9a94b0d6a2"
+					(reference "C1")
 					(unit 1)
 				)
 			)
@@ -1548,7 +1572,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "df7d5a55-0f12-4d36-b138-3e7ba4dec47a")
-		(property "Reference" "C2"
+		(property "Reference" "C6"
 			(at 154.94 79.1209 0)
 			(effects
 				(font
@@ -1594,15 +1618,19 @@
 			)
 		)
 		(pin "1"
-			(uuid "fe5db7e3-4430-456c-b432-c822f153dc62")
+			(uuid "82fe0948-de81-4547-82e0-24f773004ef8")
 		)
 		(pin "2"
-			(uuid "dfbb709c-0bda-43c5-9b69-568679680d97")
+			(uuid "47487433-5eab-40f3-bc3d-40f13646b885")
 		)
 		(instances
 			(project "clockradio"
 				(path "/26cce7b5-0449-425b-905b-3af383c44d12/0887f379-3559-4bf0-a3a2-19644d2d196f"
 					(reference "C6")
+					(unit 1)
+				)
+				(path "/26cce7b5-0449-425b-905b-3af383c44d12/487c280c-3f8d-4ad3-803c-ea9a94b0d6a2"
+					(reference "C2")
 					(unit 1)
 				)
 			)
@@ -1618,7 +1646,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "f943b84a-6e6a-4d3a-a6ab-413802213145")
-		(property "Reference" "U1"
+		(property "Reference" "U3"
 			(at 147.32 81.3114 0)
 			(effects
 				(font
@@ -1634,7 +1662,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "ECE:DIP08"
 			(at 139.7 85.09 0)
 			(effects
 				(font
@@ -1662,33 +1690,37 @@
 			)
 		)
 		(pin "1"
-			(uuid "4ff8e0da-5b93-4b59-9211-24c6f23cde0d")
+			(uuid "ee6356ea-efd4-4be3-a641-242067d63d2c")
 		)
 		(pin "4"
-			(uuid "49bb58eb-f7e3-42ce-86a0-bd617ddf2b51")
+			(uuid "2e744d1b-2de1-4021-9271-d038c7d4cbb6")
 		)
 		(pin "5"
-			(uuid "68507840-fb08-409d-b530-643b58f2d578")
+			(uuid "7b017b8d-91bd-437f-aae0-72995b50f943")
 		)
 		(pin "7"
-			(uuid "5feb5c07-21d4-40fb-a3dc-e96783a226c9")
+			(uuid "40d3ec38-c672-40d7-88db-315340911cd1")
 		)
 		(pin "2"
-			(uuid "26d5304e-8489-4d08-bf63-0da064243d95")
+			(uuid "bde89f7c-b41f-44c5-b6d9-802e1ece39d6")
 		)
 		(pin "3"
-			(uuid "412cf9dc-33c3-448b-86e7-2f0681054929")
+			(uuid "073f767c-4e4b-4c9e-88ba-2a2671405576")
 		)
 		(pin "6"
-			(uuid "75b37852-b7d6-4f6d-ac19-bd73e509e5d5")
+			(uuid "e180a93c-e430-433d-8495-dfdf70102c89")
 		)
 		(pin "8"
-			(uuid "ea297ec0-5cef-478a-ac92-51114e57bf95")
+			(uuid "533a2e88-d600-4043-afc6-bef7c6e17e9c")
 		)
 		(instances
 			(project "clockradio"
 				(path "/26cce7b5-0449-425b-905b-3af383c44d12/0887f379-3559-4bf0-a3a2-19644d2d196f"
 					(reference "U3")
+					(unit 1)
+				)
+				(path "/26cce7b5-0449-425b-905b-3af383c44d12/487c280c-3f8d-4ad3-803c-ea9a94b0d6a2"
+					(reference "U2")
 					(unit 1)
 				)
 			)
