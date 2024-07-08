@@ -1,8 +1,12 @@
 from machine import Pin, Timer
 from display import CR_SPI_Display
 from encoder import RotaryEncoder
+import copy
 import time
+import sys
 
+
+        
 class Menu:
     def __init__(
         self,
@@ -18,24 +22,29 @@ class Menu:
         led_pin,
         header,
         selectables,
+        id,
         cursor=">"
     ):
         self.header = header
         self.selectables = selectables
         self.selectables_count = len(selectables)
         self.cursor_icon = cursor
+        self.id = id
 
         # Initialize clock radio display for SPI
-        self.display = CR_SPI_Display(
-            screen_width=screen_width,
-            screen_height=screen_height,
-            spi_dev=spi_device,
-            spi_sck=spi_sck,
-            spi_sda=spi_sda,
-            spi_cs=spi_cs,
-            res=res,
-            dc=dc
-        )
+        try:
+            self.display = CR_SPI_Display(
+                screen_width=screen_width,
+                screen_height=screen_height,
+                spi_dev=spi_device,
+                spi_sck=spi_sck,
+                spi_sda=spi_sda,
+                spi_cs=spi_cs,
+                res=res,
+                dc=dc
+            )
+        except Exception as e:
+            sys.print_exception(e)
 
         # Create an instance of the RotaryEncoder
         self.encoder = RotaryEncoder(
@@ -48,7 +57,7 @@ class Menu:
         )
         self.last_count = self._get_cursor_position_modulus()
         self._update_count_and_display(self.last_count)
-
+        
     def _get_cursor_position_modulus(self):
         """
         Currently ignoring direction
@@ -69,16 +78,23 @@ class Menu:
         return False
     
     def _update_cursor_to_current_selection(self, current_count):
+        """
+        Shows cursor icon on currently selected item in menu
+        """
         # Update cursor to reflect new selection
-        selectables = list(self.selectables)
+        # Don't save the cursor modification the raw selectables list
+        selectables = copy.deepcopy(list(self.selectables))
         
-        original_text = selectables[current_count]
-        selectables[current_count] = f"{self.cursor_icon} {original_text}"
+        selected = selectables[current_count]
+        original_text = selected.get("display_text")
+        selected["display_text"] = f"{self.cursor_icon} {original_text}"
         
         # Update display for the number of selectable items present
         col = 0
         for i in range(len(selectables)):
-            self.display.update_text(selectables[i], col, i + 2)
+            current = selectables[i]
+            self.display.update_text(current.get("display_text"), col, i)
+
         
     def _update_count_and_display(self, current_count):
         """
@@ -88,11 +104,6 @@ class Menu:
         self.last_count = current_count
         self._update_cursor_to_current_selection(current_count)
 
-    def _disable_interrupts(self):
-        print("disable interrupts")
-        self.encoder.pin_a.irq(handler=None)
-        self.encoder.pin_b.irq(handler=None)
-        self.encoder.pin_switch.irq(handler=None)
 
     def poll_selection_change_and_update_display(self):
         """
@@ -111,10 +122,22 @@ class Menu:
         return self.encoder.get_button_state()
     
     def get_selection(self):
+        selected_index = self._get_cursor_position_modulus()
+        print(f"get_selection: {self.selectables[selected_index]}")
         return self._get_cursor_position_modulus()
+
+    def _disable_interrupts(self):
+        print("disable interrupts")
+        self.encoder.pin_a.irq(handler=None)
+        self.encoder.pin_b.irq(handler=None)
+        #self.encoder.pin_switch.irq(handler=None)
+        self.encoder.button.disable_irq()
 
     def stop_menu(self):
         self._disable_interrupts()
+        # TODO: loaded menu should have name property - log that menu was disabled.
+        #self.display.release()
+        #print("powered off....")
 
 '''
     def track_encoder(self):

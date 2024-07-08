@@ -1,7 +1,8 @@
 from machine import Pin, Timer
 import utime
-
-# TODO(dd): integrate the LED for user feedback.
+from button import Button
+from led import LED
+    
 
 class RotaryEncoder:
     """
@@ -24,7 +25,9 @@ class RotaryEncoder:
         rollover=True,
         max=10,
         min=1,
-        qtimeout_ms=150
+        qtimeout_ms=150,
+        button_callback=None,
+        button_identity=None
     ):
         """
         Args:
@@ -41,8 +44,7 @@ class RotaryEncoder:
         """
         self.pin_a = Pin(pin_a, mode=Pin.IN)
         self.pin_b = Pin(pin_b, mode=Pin.IN)
-        self.pin_switch = Pin(pin_switch, mode=Pin.IN, pull=Pin.PULL_UP)
-        self.led_pin = Pin(led_pin, mode=Pin.OUT, value=0)
+        self.led = LED(led_pin)
 
         self.rollover = rollover
         self.max = max
@@ -54,27 +56,34 @@ class RotaryEncoder:
         self.transition_count = 0
         self.last_transition_time = utime.ticks_ms()
         self.qtimeout_ms = qtimeout_ms
-        self.button_last_state = False
 
         self.encoder_triggered = False
-        self.button_triggered = False
 
         self.encoder_timer = Timer(-1)  # Timer for encoder debounce
-        self.button_timer = Timer(-1)  # Timer for button debounce
         self.debounce_delay_ms = 2
-        self.button_delay_ms = 10
 
         self.pin_a.irq(trigger=Pin.IRQ_RISING | Pin.IRQ_FALLING, handler=self.encoder_irq)
         self.pin_b.irq(trigger=Pin.IRQ_RISING | Pin.IRQ_FALLING, handler=self.encoder_irq)
-        self.pin_switch.irq(trigger=Pin.IRQ_FALLING, handler=self.button_irq)
+
+        # Initialize the Button instance
+        self.programmed_callback = button_callback
+        self.identity = button_identity if button_identity else "encoder_button"
+        
+        self.button = Button(
+            button_pin=pin_switch,
+            led_pin=led_pin,
+            callback=self.button_callback,
+            identity=self.identity,
+            debounce_time_ms=10,
+        )
 
     def get_counter(self):
         # TODO: check if counter is negative
         return (self.counter, self.direction)
     
     def get_button_state(self):
-        return self.button_last_state
-        
+        return self.button.button.value() == 0  # ACTIVE LOW
+
     def encoder_irq(self, pin):
         """
         Description: Debounce the encoder signal by catching the first detected edge and muting
@@ -84,15 +93,11 @@ class RotaryEncoder:
         """
         if not self.encoder_triggered:
             self.encoder_triggered = True
-            self.encoder_timer.init(mode=Timer.ONE_SHOT, period=self.debounce_delay_ms, callback=self.process_encoder)
-
-    def button_irq(self, pin):
-        """
-        Description: Debounce the button signal described above.
-        """
-        if not self.button_triggered:
-            self.button_triggered = True
-            self.button_timer.init(mode=Timer.ONE_SHOT, period=self.button_delay_ms, callback=self.process_button)
+            self.encoder_timer.init(
+                mode=Timer.ONE_SHOT,
+                period=self.debounce_delay_ms,
+                callback=self.process_encoder
+            )
 
     def update_counter(self, increment):
         
@@ -112,7 +117,6 @@ class RotaryEncoder:
                     self.counter = self.max
                 else:
                     self.counter = self.min
-
 
     def process_encoder(self, timer):
         """
@@ -158,6 +162,8 @@ class RotaryEncoder:
             # Check for a complete cycle
             if self.transition_count == 4:
                 self.transition_count = 0
+                
+                self.led.toggle(50)
                 # Determine direction and update counter
                 # Clockwise transitions
                 if ((self.last_state == 0 and state == 1) or
@@ -171,36 +177,27 @@ class RotaryEncoder:
                       (self.last_state == 3 and state == 1) or
                       (self.last_state == 1 and state == 0)):
                     self.update_counter(False)
-
-                print("Counter: ", self.counter, " | Direction: ", self.direction)
-                print("\n")
+                
+                #print("Counter: ", self.counter, " | Direction: ", self.direction)
+                #print("\n")
 
             self.last_state = state
 
         self.encoder_triggered = False
 
-    def process_button(self, timer):
-        button_current_state = self.pin_switch.value() == 0  # ACTIVE LOW
-        if button_current_state != self.button_last_state:
-            print(f"encoder button pressed: {button_current_state}")
-            #if button_current_state:  # Button pressed
-            #    print(f"Button is Pressed at counter: {self.counter}\n")
-            #else:
-            #    print("Button unpressed")
-            self.button_last_state = button_current_state
-        self.button_triggered = False
+    def button_callback(self, identity):
+        if callable(self.programmed_callback):
+            self.programmed_callback()
+        #print(f"encoder button callback: {identity}")
 
-    def toggle_led(self):
-        self.led_pin.toggle()
+
 
 # Usage example:
 if __name__ == "__main__":
     # Create an instance of the RotaryEncoder class
     encoder = RotaryEncoder(pin_a=19, pin_b=18, pin_switch=20, led_pin=25)
 
-
     # Main loop
     while True:
-        encoder.toggle_led()
+        #encoder.toggle_led()
         utime.sleep(1)
-
