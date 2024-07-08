@@ -107,6 +107,7 @@ def start_main_menu():
         encoder_pins=(19, 18, 20),
         led_pin=25,
         header="Main Menu",
+        #header="AB",
         selectables=["time", "radio"]
     )
 
@@ -144,6 +145,7 @@ def start_monitoring(menu):
 
 def mute():
     # Alarm and/or radio
+    pass
 
 
 radio_pwr_button = initialize_radio_power()
