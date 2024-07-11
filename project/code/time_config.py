@@ -6,6 +6,7 @@ import sys
 from config import Config
 from ui import UI
 
+
 class TimeConfig(UI):
     def __init__(
         self,
@@ -93,7 +94,7 @@ class TimeConfig(UI):
             new_second = int(self.current_value)
         
         print(f"Writing to RTC -> Year: {current_datetime['year']}, Month: {current_datetime['month']}, Day: {current_datetime['day']}, Weekday: {new_weekday}, Hour: {new_hour}, Minute: {new_minute}, Second: {new_second}")
-        
+
         # Directly call rtc.rtc.datetime()
         try:
             self.rtc.rtc.datetime((int(current_datetime["year"]),

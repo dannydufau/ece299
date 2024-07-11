@@ -1,9 +1,12 @@
 import machine
 import utime
+import uos
 from ds1307 import DS1307
 
+
 class RTC:
-        
+    CONFIG_FILE = "time_mode_config.txt"
+
     def __init__(self):
         self.weekday_map = {
             "sunday": 0,
@@ -14,15 +17,15 @@ class RTC:
             "friday": 5,
             "saturday": 6
         }
-        
+
         self.reverse_weekday_map = {v: k for k, v in self.weekday_map.items()}
-        
+
         # Initialize I2C0
         i2c = machine.I2C(0, sda=machine.Pin(16), scl=machine.Pin(17))
 
         # Initialize DS1307
         self.rtc = DS1307(i2c)
-        self.use_24_hour_format = True
+        self.is_12_hour = self.load_time_mode() == 0  # Load time mode configuration
 
         # Set the time (year, month, day, weekday, hour, minute, second)
         current_time = self.rtc.datetime()
@@ -32,9 +35,8 @@ class RTC:
         # Normalize the weekday to an integer
         if isinstance(weekday, str):
             weekday_lower = weekday.lower()
-            
             # Default to 0 (Sunday) if not found
-            weekday_int = self.weekday_map.get(weekday_lower, 0)  
+            weekday_int = self.weekday_map.get(weekday_lower, 0)
         else:
             weekday_int = weekday
 
@@ -47,17 +49,23 @@ class RTC:
     def get_datetime(self):
         """
         Get the current datetime data via i2c. If an interrupt handling operation
-        takes a long time (cough cough menu transitions), then we might see an i2c
+        takes a long time (menu transitions), then we might see an i2c
         timeout issue here as a result. Assume the interrupt handling has higher
         priority, ignore the error, and get the time on the next cycle.
         """
         try:
             datetime = self.rtc.datetime()
             year, month, day, weekday, hour, minute, second, *_ = datetime  # Use * to handle additional values
+
+            if self.is_12_hour:
+                hour, am_pm = self.convert_to_12_hour(hour)
+                time = '{:02d}:{:02d}:{:02d} {}'.format(hour, minute, second, am_pm)
+            else:
+                time = '{:02d}:{:02d}:{:02d}'.format(hour, minute, second)
+
             date = '{:04d}-{:02d}-{:02d}'.format(year, month, day)
-            time = '{:02d}:{:02d}:{:02d}'.format(hour, minute, second)
             weekday_str = self.reverse_weekday_map.get(weekday, "Invalid weekday")
-            
+
             return {
                 "time": time,
                 "date": date,
@@ -85,9 +93,36 @@ class RTC:
                 "second": 0
             }
 
+    def convert_to_12_hour(self, hour):
+        if hour == 0:
+            return 12, 'AM'
+        elif hour == 12:
+            return 12, 'PM'
+        elif hour > 12:
+            return hour - 12, 'PM'
+        else:
+            return hour, 'AM'
+
+    def load_time_mode(self):
+        try:
+            if self.file_exists(self.CONFIG_FILE):
+                with open(self.CONFIG_FILE, 'r') as file:
+                    mode = int(file.read().strip())
+                    print(f"Time mode {mode} loaded from {self.CONFIG_FILE}")
+                    return mode
+        except Exception as e:
+            print(f"Failed to load time mode. Defaulting to 24-hour mode. Error: {e}")
+        return 1  # Default to 24-hour mode if loading fails
+
+    def file_exists(self, filepath):
+        try:
+            uos.stat(filepath)
+            return True
+        except OSError:
+            return False
+
 
 if __name__ == "__main__":
-
     # Initialize I2C0
     i2c = machine.I2C(0, sda=machine.Pin(16), scl=machine.Pin(17))
 

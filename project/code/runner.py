@@ -6,7 +6,7 @@ from menu import Menu
 from thread_manager import ThreadManager
 from queue_handler import QueueHandler
 from rtc import RTC
-from menu_config import start_main_menu, start_hour_config, start_minute_config, start_second_config, menu_map
+from menu_config import start_main_menu, start_hour_config, start_minute_config, start_second_config, start_time_mode_config, menu_map
 from display_config import create_navigation_display, create_report_display
 
 # Initialize the thread manager
@@ -32,6 +32,7 @@ def get_menu_from_button(id):
     elif id == "stop_monitoring":
         thread_manager.stop_thread()
         menu.stop()
+        
         # Returning a default menu to avoid None
         return start_main_menu(navigation_display)
     else:
@@ -51,6 +52,8 @@ def load_menu(current_menu, new_menu_item_id):
             new_menu = start_minute_config(navigation_display, rtc)
         elif new_menu_item_id == "set_second":
             new_menu = start_second_config(navigation_display, rtc)
+        elif new_menu_item_id == "set_time_mode":
+            new_menu = start_time_mode_config(navigation_display, rtc)
         else:
             new_menu = menu_map[new_menu_item_id](navigation_display)
 
@@ -94,10 +97,12 @@ def start_monitoring(initial_menu):
     print("thread monitoring started..")
     thread_manager.start_thread(target)
 
+
 def stop_monitoring():
     thread_manager.stop_thread()
     thread_manager.wait_for_stop()
     menu.stop()
+
 
 def initialize_button(button_pin, led_pin, identity):
     def button_callback(identity):
@@ -111,6 +116,7 @@ def initialize_button(button_pin, led_pin, identity):
         identity=identity
     )
     return button
+
 
 radio_pwr_button = initialize_button(
     button_pin=0,

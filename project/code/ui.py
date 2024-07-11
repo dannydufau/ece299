@@ -18,31 +18,7 @@ class UI:
         self.led_pin = led_pin
         self.header = header
         self.display = None
-        #self.initialize_display(screen_width, screen_height, spi_device, spi_sck, spi_sda, spi_cs, res, dc)
 
-    '''
-    #def initialize_display(self):
-    def initialize_display(self, screen_width, screen_height, spi_device, spi_sck, spi_sda, spi_cs, res, dc):
-        
-        # Initialize clock radio display for SPI
-        try:
-            self.display = CR_SPI_Display(
-                screen_width=screen_width,
-                screen_height=screen_height,
-                spi_dev=spi_device,
-                spi_sck=spi_sck,
-                spi_sda=spi_sda,
-                spi_cs=spi_cs,
-                res=res,
-                dc=dc
-            )
-            return self.display
-        
-        except Exception as e:
-            sys.print_exception(e)
-            print("DISPLAY NOT CREATED FOR MENU")
-            raise
-    '''
     def poll_selection_change_and_update_display(self):
         raise NotImplementedError
 
