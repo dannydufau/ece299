@@ -189,6 +189,11 @@ class RotaryEncoder:
         if callable(self.programmed_callback):
             self.programmed_callback()
         #print(f"encoder button callback: {identity}")
+    
+    def reset_counter(self):
+        self.counter = 0
+        self.direction = 0
+        #self.update_callback(self.counter, self.direction)
 
 
 

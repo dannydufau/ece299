@@ -63,12 +63,14 @@ class CR_SPI_Display:
             self.dc,
             self.res,
             self.cs,
-            True
+            False #external_vcc=False
         )
-
+        #self.enable()
         # Set display pixel to character multiplier
-        self.char_height_px = 10
-        self.char_width_px = 6
+        # https://docs.micropython.org/en/latest/library/framebuf.html
+        # see Framebuffer.text
+        self.char_height_px = 8
+        self.char_width_px = 8
 
         # Set maximum limits for columns and rows in terms of chars
         self.max_columns = self.oled.width // self.char_width_px
@@ -94,23 +96,32 @@ class CR_SPI_Display:
         y = row * self.char_height_px
         self.oled.fill_rect(0, y, self.oled.width, 10, 0)
         
-    def _update_row(self, text, column, row):
+    def _update_row(self, text, column, row, color=1, tab=True):
         """
         Render the text at the specified location
         Args:
             text (str):
             column (int):
             row (int):
+            color (int): black 0, white 1
+            tab (bool): adds space to accomodate cursor
         """
-        x = column * self.char_width_px
+        x = column * self.char_width_px + 2
         y = row * self.char_height_px
-        self.oled.text(text, x, y)
+        self.oled.text(text, x, y, color)
         
-    def update_text(self, text, column, row):
+    def update_text(self, text, column, row, color=1):
         """
         Description:
-        Letters are 10 (pixels) high, set rows to reflect sentence height.
+        Letters are 8 (pixels) high, set rows to reflect sentence height.
         Check that row/column args to overrun configured display buffers.
+        Framebuffer.text 8x8 pixel characters only.
+        https://docs.micropython.org/en/latest/library/framebuf.html
+        
+        # NOTE: the current SSD1306 module and framebuf library we are
+        # using do not support different fonts out of the box. Instead, we need to
+        # manually implement a way to handle different fonts for different sizes.
+        # May need https://docs.circuitpython.org/projects/display_text/en/latest/
         """
 
         # Ensure column and row are within limits
@@ -128,10 +139,34 @@ class CR_SPI_Display:
         # Clear the specified row
         self._clear_row(row)
 
-        self._update_row(text, column, row)
+        self._update_row(text, column, row, color)
 
         # Update the display
         self.oled.show()
+        
+    def enable(self):
+        self.oled.poweron()
+
+    def release(self):
+        self.clear()
+        #self.oled.poweroff()
+        #print("poweroff complete")
+
+
+class CR_SPI_Display_Second(CR_SPI_Display):
+    def __init__(
+        self,
+        screen_width=128,
+        screen_height=64,
+        spi_dev=1,
+        spi_sck=10,
+        spi_sda=11,
+        spi_cs=13,
+        res=14,
+        dc=12,
+        baudrate=100000,
+    ):
+        super().__init__(spi_sck, spi_sda, spi_cs, spi_dev, res, dc, screen_width, screen_height, baudrate)
 
 # Usage example:
 if __name__ == "__main__":
@@ -149,5 +184,18 @@ if __name__ == "__main__":
     )
 
     # Call the update_text method
-    display.update_text("ECE 299", 0, 0)
+    display.update_text("ECE 299", 0, 0, 3)
+
+    display.oled.fill(0)
+    display.oled.fill_rect(0, 0, 32, 32, 1)
+    display.oled.fill_rect(2, 2, 28, 28, 0)
+    display.oled.vline(9, 8, 22, 1)
+    display.oled.vline(16, 2, 22, 1)
+    display.oled.vline(23, 8, 22, 1)
+    display.oled.fill_rect(26, 24, 2, 4, 1)
+    display.oled.text('ECE 299', 40, 0, 1)
+    display.oled.text('SSD1306', 40, 12, 1)
+    display.oled.text('OLED 128x64', 40, 24, 1)
+    display.oled.show()
+
 

@@ -1,13 +1,105 @@
 from machine import Pin, Timer
 from display import CR_SPI_Display
 from encoder import RotaryEncoder
+from ui import UI
 import copy
 import time
 import sys
 
+#from ui import UI
+#import copy
+#import sys
+#from encoder import RotaryEncoder
 
+
+class Menu(UI):
+    def __init__(
+        self,
+        display,
+        encoder_pins,
+        led_pin,
+        header,
+        selectables,
+        id,
+        cursor=">"
+    ):
+        self.display = display
+        self.header = header
+        self.selectables = selectables
+        self.selectables_count = len(selectables)
+        self.cursor_icon = cursor
+        self.id = id
+
+        try:
+            self.encoder = RotaryEncoder(
+                pin_a=encoder_pins[0], 
+                pin_b=encoder_pins[1], 
+                pin_switch=encoder_pins[2], 
+                led_pin=led_pin, 
+                rollover=True, 
+                max=self.selectables_count
+            )
+        except Exception as e:
+            sys.print_exception(e)
+            print("ENCODER NOT CREATED FOR MENU")
+            raise
         
-class Menu:
+        self.last_count = self._get_cursor_position_modulus()
+        self._update_count_and_display(self.last_count)
+        
+    def _get_cursor_position_modulus(self):
+        current_count = self.encoder.get_counter()[0]
+        current_count -= 1
+        if current_count < 0:
+            current_count = 0
+        return current_count
+
+    def _has_selection_changed(self):
+        count = self.last_count
+        if self._get_cursor_position_modulus() != self.last_count:
+            return True
+        return False
+    
+    def _update_cursor_to_current_selection(self, current_count):
+        selectables = copy.deepcopy(list(self.selectables))
+        selected = selectables[current_count]
+        original_text = selected.get("display_text")
+        selected["display_text"] = f"{self.cursor_icon} {original_text}"
+        col = 0
+        for i in range(len(selectables)):
+            current = selectables[i]
+            self.display.update_text(current.get("display_text"), col, i)
+
+    def _update_count_and_display(self, current_count):
+        self.last_count = current_count
+        self._update_cursor_to_current_selection(current_count)
+
+    def poll_selection_change_and_update_display(self):
+        current_count = self._get_cursor_position_modulus()
+        if self._has_selection_changed():
+            self._update_count_and_display(current_count)
+            return True
+        return False
+    
+    def is_encoder_button_pressed(self):
+        return self.encoder.get_button_state()
+    
+    def get_selection(self):
+        selected_index = self._get_cursor_position_modulus()
+        print(f"get_selection: {self.selectables[selected_index]}")
+        return {"id": self.selectables[selected_index]["id"], "display_text": self.selectables[selected_index]["display_text"]}
+
+    def _disable_interrupts(self):
+        print("disable interrupts")
+        self.encoder.pin_a.irq(handler=None)
+        self.encoder.pin_b.irq(handler=None)
+        self.encoder.button.disable_irq()
+
+    def stop(self):
+        self._disable_interrupts()
+
+
+class MenuBak(UI):
     def __init__(
         self,
         screen_width,
@@ -25,13 +117,16 @@ class Menu:
         id,
         cursor=">"
     ):
-        self.header = header
+        super().__init__(screen_width, screen_height, spi_device, spi_sck, spi_sda, spi_cs, res, dc, encoder_pins, led_pin, header)
         self.selectables = selectables
         self.selectables_count = len(selectables)
         self.cursor_icon = cursor
         self.id = id
-
+        
         # Initialize clock radio display for SPI
+        # doesn't work
+        #self.display = self.initialize_display(screen_width, screen_height, spi_device, spi_sck, spi_sda, spi_cs, res, dc)
+      
         try:
             self.display = CR_SPI_Display(
                 screen_width=screen_width,
@@ -45,7 +140,9 @@ class Menu:
             )
         except Exception as e:
             sys.print_exception(e)
-
+            print("DISPLAY NOT CREATED FOR MENU")
+            raise
+        
         # Create an instance of the RotaryEncoder
         self.encoder = RotaryEncoder(
             pin_a=encoder_pins[0], 
@@ -84,8 +181,9 @@ class Menu:
         # Update cursor to reflect new selection
         # Don't save the cursor modification the raw selectables list
         selectables = copy.deepcopy(list(self.selectables))
-        
         selected = selectables[current_count]
+        #print(f"selected: {selected}")
+
         original_text = selected.get("display_text")
         selected["display_text"] = f"{self.cursor_icon} {original_text}"
         
@@ -124,7 +222,8 @@ class Menu:
     def get_selection(self):
         selected_index = self._get_cursor_position_modulus()
         print(f"get_selection: {self.selectables[selected_index]}")
-        return self._get_cursor_position_modulus()
+        return {"id": self.selectables[selected_index]["id"], "display_text": self.selectables[selected_index]["display_text"]}
+
 
     def _disable_interrupts(self):
         print("disable interrupts")
@@ -133,7 +232,7 @@ class Menu:
         #self.encoder.pin_switch.irq(handler=None)
         self.encoder.button.disable_irq()
 
-    def stop_menu(self):
+    def stop(self):
         self._disable_interrupts()
         # TODO: loaded menu should have name property - log that menu was disabled.
         #self.display.release()

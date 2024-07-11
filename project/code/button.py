@@ -26,7 +26,7 @@ class Button:
         if button_current_state != self.button_last_state:
             if button_current_state:  # Button pressed
                 self.led.toggle()
-                print(f"Button is Pressed: {self.identity}")
+                #print(f"Button is Pressed: {self.identity}")
                 self.callback(self.identity)
             else:  # Button released
                 #print(f"Button is Released: {self.identity}")
