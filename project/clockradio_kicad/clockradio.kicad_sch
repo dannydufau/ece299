@@ -3345,6 +3345,12 @@
 		(uuid "b7175cd2-5451-4e41-ba97-c921ef7bbc47")
 	)
 	(junction
+		(at 107.95 77.47)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "c4647f2d-57a8-4dc6-89b0-429799ea6678")
+	)
+	(junction
 		(at 180.34 66.04)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -3413,10 +3419,6 @@
 	(no_connect
 		(at 76.2 172.72)
 		(uuid "78774783-923f-4f5b-ab6f-340341ed8dcd")
-	)
-	(no_connect
-		(at 76.2 157.48)
-		(uuid "78cef3a4-8429-4c4b-9709-1844a410c938")
 	)
 	(no_connect
 		(at 76.2 147.32)
@@ -3700,6 +3702,16 @@
 	)
 	(wire
 		(pts
+			(xy 78.74 156.21) (xy 85.09 156.21)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "320682fd-fb83-4ec4-b2d5-615fc168430e")
+	)
+	(wire
+		(pts
 			(xy 40.64 165.1) (xy 33.02 165.1)
 		)
 		(stroke
@@ -3770,6 +3782,16 @@
 	)
 	(wire
 		(pts
+			(xy 60.96 93.98) (xy 71.12 93.98)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3c7629d8-b725-409a-9d88-23a48afdfa9d")
+	)
+	(wire
+		(pts
 			(xy 107.95 77.47) (xy 107.95 88.9)
 		)
 		(stroke
@@ -3807,16 +3829,6 @@
 			(type default)
 		)
 		(uuid "48fd3dd3-63c3-424d-9872-d0b919010a23")
-	)
-	(wire
-		(pts
-			(xy 53.34 93.98) (xy 71.12 93.98)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "49301a5d-7c3d-4470-88a3-4630767cc668")
 	)
 	(wire
 		(pts
@@ -4177,6 +4189,26 @@
 			(type default)
 		)
 		(uuid "a28c3ee7-541d-42d4-ac77-1e9644f30a10")
+	)
+	(wire
+		(pts
+			(xy 78.74 157.48) (xy 78.74 156.21)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a583ecdf-39eb-4409-a380-07039f29f095")
+	)
+	(wire
+		(pts
+			(xy 76.2 157.48) (xy 78.74 157.48)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a7813e0c-f140-47b2-affb-9ffc5b8c07a4")
 	)
 	(wire
 		(pts
@@ -4768,6 +4800,28 @@
 			)
 		)
 	)
+	(global_label "GPIO22"
+		(shape input)
+		(at 85.09 156.21 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "4d9dd437-74a2-439e-82c6-48a4fa1b1a26")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 94.9695 156.21 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "GPIO27"
 		(shape input)
 		(at 118.11 44.45 180)
@@ -5182,6 +5236,28 @@
 					(size 1.27 1.27)
 				)
 				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "GPIO22"
+		(shape input)
+		(at 60.96 93.98 90)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "f89136a4-941b-4d50-b018-d24adc72c38a")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 60.96 86.0358 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
 				(hide yes)
 			)
 		)
@@ -7824,6 +7900,72 @@
 			(project ""
 				(path "/26cce7b5-0449-425b-905b-3af383c44d12"
 					(reference "D3")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+5V")
+		(at 107.95 77.47 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "f8d312e6-81e4-463c-b8b3-d28ac0cdd869")
+		(property "Reference" "#PWR018"
+			(at 107.95 81.28 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+5V"
+			(at 107.95 72.39 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 107.95 77.47 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 107.95 77.47 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+5V\""
+			(at 107.95 77.47 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "dd1278e5-d704-4bd9-97d1-a5ddea4761c7")
+		)
+		(instances
+			(project ""
+				(path "/26cce7b5-0449-425b-905b-3af383c44d12"
+					(reference "#PWR018")
 					(unit 1)
 				)
 			)
