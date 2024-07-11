@@ -3421,10 +3421,6 @@
 		(uuid "78774783-923f-4f5b-ab6f-340341ed8dcd")
 	)
 	(no_connect
-		(at 76.2 147.32)
-		(uuid "79baa97f-aa21-409f-9211-9c8525930b9d")
-	)
-	(no_connect
 		(at 64.77 180.34)
 		(uuid "860f623e-c3d9-433b-a897-938f5386961a")
 	)
@@ -4042,6 +4038,16 @@
 	)
 	(wire
 		(pts
+			(xy 76.2 147.32) (xy 80.01 147.32)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8594d2da-09dc-4e9d-9c80-43061b56fffc")
+	)
+	(wire
+		(pts
 			(xy 30.48 151.13) (xy 34.29 151.13)
 		)
 		(stroke
@@ -4179,6 +4185,16 @@
 			(type default)
 		)
 		(uuid "9efe458f-59a8-4384-9c23-6f7e93d9d209")
+	)
+	(wire
+		(pts
+			(xy 80.01 144.78) (xy 85.09 144.78)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9ffacc70-7a59-466f-b9c1-61756ddbd1dd")
 	)
 	(wire
 		(pts
@@ -4389,6 +4405,16 @@
 			(type default)
 		)
 		(uuid "c7a68772-8683-49cc-8b96-ecb3284fa52a")
+	)
+	(wire
+		(pts
+			(xy 80.01 147.32) (xy 80.01 144.78)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "cb4b8f12-abba-470d-9be8-b9fa6cf683f7")
 	)
 	(wire
 		(pts
@@ -4994,6 +5020,28 @@
 					(size 1.27 1.27)
 				)
 				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "GPIO28"
+		(shape input)
+		(at 85.09 144.78 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "8fe8785b-9c4d-480b-80b3-4f780032e15e")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 94.9695 144.78 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
 				(hide yes)
 			)
 		)
