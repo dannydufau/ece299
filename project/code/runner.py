@@ -1,20 +1,17 @@
-# runner.py
-
 import utime
 from button import Button
 from menu import Menu
 from thread_manager import ThreadManager
 from queue_handler import QueueHandler
 from rtc import RTC
-from menu_config import start_main_menu, start_hour_config, start_minute_config, start_second_config, start_time_mode_config, menu_map
+from menu_config import start_main_menu, start_hour_config, start_minute_config, start_seconds_config, start_time_mode_config, menu_map
 from display_config import create_navigation_display, create_report_display
 
 # Initialize the thread manager
 thread_manager = ThreadManager()
 
-# Instantiate the auxiliary and report queues
+# Instantiate the auxiliary queue
 auxiliary_queue = QueueHandler()
-report_queue = QueueHandler()
 
 # Create the RTC instance
 rtc = RTC()
@@ -50,34 +47,49 @@ def load_menu(current_menu, new_menu_item_id):
             new_menu = start_hour_config(navigation_display, rtc)
         elif new_menu_item_id == "set_minute":
             new_menu = start_minute_config(navigation_display, rtc)
-        elif new_menu_item_id == "set_second":
-            new_menu = start_second_config(navigation_display, rtc)
+        elif new_menu_item_id == "set_seconds":
+            new_menu = start_seconds_config(navigation_display, rtc)
         elif new_menu_item_id == "set_time_mode":
             new_menu = start_time_mode_config(navigation_display, rtc)
+        elif new_menu_item_id == "set_hour_alarm":
+            new_menu = start_hour_config(
+                display=navigation_display,
+                rtc=rtc,
+                time_or_alarm="alarm",
+                next_config={"id": "set_minute_alarm", "display_text": "Set Alarm Minutes"}
+            )
+        elif new_menu_item_id == "set_minute_alarm":
+            new_menu = start_minute_config(
+                display=navigation_display,
+                rtc=rtc,
+                time_or_alarm="alarm",
+                next_config={"id": "set_seconds_alarm", "display_text": "Set Alarm Seconds"}
+            )
+        elif new_menu_item_id == "set_seconds_alarm":
+            new_menu = start_seconds_config(
+                display=navigation_display,
+                rtc=rtc,
+                time_or_alarm="alarm"
+            )
         else:
             new_menu = menu_map[new_menu_item_id](navigation_display)
 
+        print(f"menu: {new_menu}")
         if isinstance(new_menu, Menu):
             new_menu.poll_selection_change_and_update_display()
         return new_menu
     else:
-        print("menu is not valid")
+        print(f"menu is not valid: {new_menu_item_id}")
         return current_menu
 
 
-def monitor(menu):
+def navigation_monitor(menu):
     while not thread_manager.is_stopped():
-        # Check if the auxiliary button was pushed
+        
+        # Check if the auxiliary button was pushed for menu request
         if not auxiliary_queue.is_empty():
             item = auxiliary_queue.dequeue()
             menu = get_menu_from_button(item)
-
-        # Check for a time update
-        # TODO: do this in main thread?
-        if not report_queue.is_empty():
-            rtc_data = report_queue.dequeue()
-            if rtc_data:
-                report_queue.add_to_queue(rtc_data)
 
         # Check if the encoder rotated
         menu.poll_selection_change_and_update_display()
@@ -93,8 +105,8 @@ def monitor(menu):
 
 def start_monitoring(initial_menu):
     def target():
-        monitor(initial_menu)
-    print("thread monitoring started..")
+        navigation_monitor(initial_menu)
+    print("navigation thread monitoring started..")
     thread_manager.start_thread(target)
 
 
@@ -130,16 +142,18 @@ start_monitoring(main_menu)
 
 try:
     while True:
-        # Enqueue RTC data to the report queue
-        rtc_data = rtc.get_datetime()
-        report_queue.add_to_queue(rtc_data)
 
-        # Dequeue RTC data from the report queue and update the display
-        if not report_queue.is_empty():
-            rtc_data = report_queue.dequeue()
-            if rtc_data:
-                report_display.update_text(rtc_data.get("date"), 0, 1)
-                report_display.update_text(rtc_data.get("time"), 0, 2)
+        # Get RTC data and update the display
+        rtc_data = rtc.get_formatted_datetime_from_module()
+        #rtc_data = rtc.get_datetime()
+        if rtc_data:
+            report_display.update_text(rtc_data.get("date"), 0, 1)
+            report_display.update_text(rtc_data.get("time"), 0, 2)
+
+        # Get the alarm time and update the display
+        alarm_time = rtc.get_alarm_time()
+        alarm_text = "Alarm: {:02d}:{:02d}:{:02d}".format(alarm_time['hour'], alarm_time['minute'], alarm_time['second'])
+        report_display.update_text(alarm_text, 0, 3)
 
         utime.sleep(1)
 

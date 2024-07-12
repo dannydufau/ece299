@@ -22,42 +22,61 @@ def start_volume_config(display):
     )
 
 
-def start_hour_config(display, rtc):
+def start_hour_config(
+    display,
+    rtc,
+    time_or_alarm="time",
+    next_config={"id": "set_minute", "display_text": "Set Minutes"}
+):
     return TimeConfig(
         display=display,
         rtc=rtc,
+        time_or_alarm=time_or_alarm,
         encoder_pins=(19, 18, 20),
         led_pin=15,
         header="Hour",
-        next_config={"id": "set_minute", "display_text": "Set Minutes"},
+        # TODO:::::::::::::::::::::::: need set_minute or set_minute_alarm
+        next_config=next_config,
         min=1,
-        max=23  # dynamically set based on mode
+        max=23,  # dynamically set based on mode
     )
 
 
-def start_minute_config(display, rtc):
+def start_minute_config(
+    display,
+    rtc,
+    time_or_alarm="time",
+    next_config={"id": "set_seconds", "display_text": "Set Seconds"}
+):
     return TimeConfig(
         display=display,
         rtc=rtc,
+        time_or_alarm=time_or_alarm,
         encoder_pins=(19, 18, 20),
         led_pin=15,
         header="Minute",
-        next_config={"id": "set_second", "display_text": "Set Seconds"},
+        next_config=next_config,
         min=0,
-        max=60
+        max=60,
     )
 
 
-def start_second_config(display, rtc):
+def start_seconds_config(
+    display,
+    rtc,
+    time_or_alarm="time",
+    next_config={"id": "main_menu", "display_text": "Main Menu"}
+):
     return TimeConfig(
         display=display,
         rtc=rtc,
+        time_or_alarm=time_or_alarm,
         encoder_pins=(19, 18, 20),
         led_pin=15,
-        header="Second",
-        next_config={"id": "main_menu", "display_text": "Main Menu"},
+        header="Seconds",
+        next_config=next_config,
         min=0,
-        max=60
+        max=60,
     )
 
 
@@ -68,9 +87,9 @@ def start_alarm_config(display):
         led_pin=15,
         header="Set the alarm",
         selectables=[
-            {"display_text": "Hours", "id": "hours"},
-            {"display_text": "Minutes", "id": "minutes"},
-            {"display_text": "Seconds", "id": "seconds"}
+            {"display_text": "Hours", "id": "set_hour_alarm"},
+            {"display_text": "Minutes", "id": "set_minute_alarm"},
+            {"display_text": "Seconds", "id": "set_seconds_alarm"}
         ],
         id="set_alarm"
     )
@@ -134,8 +153,11 @@ def start_main_menu(display):
 menu_map = {
     "set_volume": start_volume_config,
     "set_hour": start_hour_config,
+    "set_hour_alarm": start_hour_config,
     "set_minute": start_minute_config,
-    "set_second": start_second_config,
+    "set_minute_alarm": start_minute_config,
+    "set_seconds": start_seconds_config,
+    "set_seconds_alarm": start_seconds_config,
     "set_alarm": start_alarm_config,
     "time_menu": start_time_menu,
     "radio_menu": start_radio_menu,
