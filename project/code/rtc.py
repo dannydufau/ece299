@@ -2,9 +2,10 @@ import machine
 import utime
 import uos
 from ds1307 import DS1307
+from square_wave_generator import SquareWaveGenerator
 
 
-class RTC:
+class RealTimeClock:
     CONFIG_FILE = "time_mode_config.txt"
     ALARM_FILE = "alarm_time.txt"
 
@@ -34,6 +35,15 @@ class RTC:
 
         # Load the alarm time into a class property
         self.alarm_time = self.get_formatted_alarm_from_file()
+        
+        # Create alarm sound instances
+        self.alarm = SquareWaveGenerator(22, 888)  # GP22, 1 kHz frequency
+
+    def alarm_on(self):
+        self.alarm.start()
+    
+    def alarm_off(self):
+        self.alarm.stop()
 
     def set_datetime(self, year, month, day, weekday, hour, minute, second):
         # Normalize the weekday to an integer

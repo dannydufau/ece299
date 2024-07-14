@@ -3,6 +3,7 @@
 from menu import Menu
 from time_config import TimeConfig
 from time_mode import TimeMode
+from alarm_config import AlarmConfig
 
 
 def get_list_from_range(low, high):
@@ -10,6 +11,14 @@ def get_list_from_range(low, high):
 
 
 # Configuration functions
+def start_alarm_disable_config(display, rtc):
+    return AlarmConfig(
+        display=display,
+        rtc=rtc,
+        encoder_pins=(19, 18, 20),
+        led_pin=15,
+    )
+
 def start_volume_config(display):
     # TODO: this is broken
     return Menu(
@@ -57,7 +66,7 @@ def start_minute_config(
         header="Minute",
         next_config=next_config,
         min=0,
-        max=60,
+        max=59,
     )
 
 
@@ -76,7 +85,7 @@ def start_seconds_config(
         header="Seconds",
         next_config=next_config,
         min=0,
-        max=60,
+        max=59,
     )
 
 
@@ -162,5 +171,6 @@ menu_map = {
     "time_menu": start_time_menu,
     "radio_menu": start_radio_menu,
     "main_menu": start_main_menu,
-    "set_time_mode": start_time_mode_config
+    "set_time_mode": start_time_mode_config,
+    "alarm_disable": start_alarm_disable_config
 }

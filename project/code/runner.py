@@ -1,10 +1,11 @@
 import utime
+from machine import Timer
 from button import Button
 from menu import Menu
 from thread_manager import ThreadManager
 from queue_handler import QueueHandler
-from rtc import RTC
-from menu_config import start_main_menu, start_hour_config, start_minute_config, start_seconds_config, start_time_mode_config, menu_map
+from rtc import RealTimeClock
+from menu_config import start_main_menu, start_hour_config, start_minute_config, start_seconds_config, start_time_mode_config, start_alarm_disable_config, menu_map
 from display_config import create_navigation_display, create_report_display
 
 # Initialize the thread manager
@@ -14,14 +15,14 @@ thread_manager = ThreadManager()
 auxiliary_queue = QueueHandler()
 
 # Create the RTC instance
-rtc = RTC()
+rtc = RealTimeClock()
 
 # Initialize the displays
 navigation_display = create_navigation_display()
 report_display = create_report_display()
 
 
-def get_menu_from_button(id):
+def get_menu_from_auxiliary(id):
     if id == "radio_power":
         menu = start_volume_config()
     elif id == "start_main_menu":
@@ -32,6 +33,8 @@ def get_menu_from_button(id):
         
         # Returning a default menu to avoid None
         return start_main_menu(navigation_display)
+    elif id == "alarm_disable":
+        menu = start_alarm_disable_config(navigation_display, rtc)
     else:
         # Default to start_main_menu if no match
         menu = start_main_menu(navigation_display)
@@ -89,7 +92,8 @@ def navigation_monitor(menu):
         # Check if the auxiliary button was pushed for menu request
         if not auxiliary_queue.is_empty():
             item = auxiliary_queue.dequeue()
-            menu = get_menu_from_button(item)
+            print(f"alarm should dequeue...{item}")
+            menu = get_menu_from_auxiliary(item)
 
         # Check if the encoder rotated
         menu.poll_selection_change_and_update_display()
@@ -129,7 +133,6 @@ def initialize_button(button_pin, led_pin, identity):
     )
     return button
 
-
 radio_pwr_button = initialize_button(
     button_pin=0,
     led_pin=15,
@@ -139,24 +142,40 @@ radio_pwr_button = initialize_button(
 main_menu = start_main_menu(navigation_display)
 
 start_monitoring(main_menu)
+# Initialize the Timer
+timer = Timer()
+
+
+def timer_callback(timer):
+    # Get RTC data and update the display
+    rtc_data = rtc.get_formatted_datetime_from_module()
+    if rtc_data:
+        report_display.update_text(rtc_data.get("date"), 0, 1)
+        report_display.update_text(rtc_data.get("time"), 0, 2)
+
+    # Get the alarm time and update the display
+    alarm_time = rtc.get_alarm_time()
+    alarm_text = "Alarm: {:02d}:{:02d}:{:02d}".format(alarm_time['hour'], alarm_time['minute'], alarm_time['second'])
+    report_display.update_text(alarm_text, 0, 3)
+
+    # Check if the current time matches the alarm time
+    if (rtc_data["hour"] == alarm_time["hour"] and 
+        rtc_data["minute"] == alarm_time["minute"] and 
+        rtc_data["second"] == alarm_time["second"]):
+        rtc.alarm_on()
+        # Enqueue the alarm disable config job
+        print("alarm should go on!!")
+        auxiliary_queue.add_to_queue("alarm_disable")
+
+# Set the timer to call the callback function every 1 second
+timer.init(period=1000, mode=Timer.PERIODIC, callback=timer_callback)
 
 try:
     while True:
-
-        # Get RTC data and update the display
-        rtc_data = rtc.get_formatted_datetime_from_module()
-        #rtc_data = rtc.get_datetime()
-        if rtc_data:
-            report_display.update_text(rtc_data.get("date"), 0, 1)
-            report_display.update_text(rtc_data.get("time"), 0, 2)
-
-        # Get the alarm time and update the display
-        alarm_time = rtc.get_alarm_time()
-        alarm_text = "Alarm: {:02d}:{:02d}:{:02d}".format(alarm_time['hour'], alarm_time['minute'], alarm_time['second'])
-        report_display.update_text(alarm_text, 0, 3)
-
-        utime.sleep(1)
-
+        utime.sleep(0.1)  # Or handle other non-blocking tasks here
 except KeyboardInterrupt:
     auxiliary_queue.add_to_queue("stop_monitoring")
+    rtc.alarm_off()
+    timer.deinit()
     print("Stopped monitoring")
+
