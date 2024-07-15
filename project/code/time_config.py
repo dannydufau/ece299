@@ -142,7 +142,11 @@ class TimeConfig(UI):
         """
         # Get the current alarm time stored to file
         alarm_time = self.rtc.get_alarm_time()
-        
+        if not alarm_time:
+                # set the default
+                alarm_time = {"hour": 0, "minute": 0, "second": 0}
+                #self.rtc.save_alarm_time(alarm_time)
+        print(f"ALARM TIME: {alarm_time}")
         # Determine which time parameter to update based on the header
         if self.header == "Hour":
             print(f"Setting alarm hour: {self.current_value}")
