@@ -155,17 +155,21 @@ def timer_callback(timer):
 
     # Get the alarm time and update the display
     alarm_time = rtc.get_alarm_time()
-    alarm_text = "Alarm: {:02d}:{:02d}:{:02d}".format(alarm_time['hour'], alarm_time['minute'], alarm_time['second'])
-    report_display.update_text(alarm_text, 0, 3)
+    if alarm_time:
+        alarm_text = "Alarm: {:02d}:{:02d}:{:02d}".format(alarm_time['hour'], alarm_time['minute'], alarm_time['second'])
+        report_display.update_text(alarm_text, 0, 3)
 
-    # Check if the current time matches the alarm time
-    if (rtc_data["hour"] == alarm_time["hour"] and 
-        rtc_data["minute"] == alarm_time["minute"] and 
-        rtc_data["second"] == alarm_time["second"]):
-        rtc.alarm_on()
-        # Enqueue the alarm disable config job
-        print("alarm should go on!!")
-        auxiliary_queue.add_to_queue("alarm_disable")
+        # Check if the current time matches the alarm time
+        if (rtc_data["hour"] == alarm_time["hour"] and 
+            rtc_data["minute"] == alarm_time["minute"] and 
+            rtc_data["second"] == alarm_time["second"]):
+            rtc.alarm_on()
+            # Enqueue the alarm disable config job
+            print("alarm should go on!!")
+            auxiliary_queue.add_to_queue("alarm_disable")
+    else:
+        # show no alarm set
+        pass
 
 # Set the timer to call the callback function every 1 second
 timer.init(period=1000, mode=Timer.PERIODIC, callback=timer_callback)
@@ -173,6 +177,7 @@ timer.init(period=1000, mode=Timer.PERIODIC, callback=timer_callback)
 try:
     while True:
         utime.sleep(0.1)  # Or handle other non-blocking tasks here
+
 except KeyboardInterrupt:
     auxiliary_queue.add_to_queue("stop_monitoring")
     rtc.alarm_off()

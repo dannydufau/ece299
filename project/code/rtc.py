@@ -79,6 +79,7 @@ class RealTimeClock:
                     mode = int(file.read().strip())
                     print(f"Time mode {mode} loaded from {self.CONFIG_FILE}")
                     return mode
+
         except Exception as e:
             print(f"Failed to load time mode. Defaulting to 24-hour mode. Error: {e}")
         return 1  # Default to 24-hour mode if loading fails
@@ -90,6 +91,7 @@ class RealTimeClock:
                 file.write(f"{alarm_time['minute']}\n")
                 file.write(f"{alarm_time['second']}\n")
             print(f"Alarm time saved: {alarm_time}")
+
         except Exception as e:
             print(f"Failed to save alarm time: {e}")
 
@@ -104,9 +106,11 @@ class RealTimeClock:
                             "minute": int(lines[1].strip()),
                             "second": int(lines[2].strip())
                         }
+                    
         except Exception as e:
             print(f"Failed to load alarm time: {e}")
-        return {"hour": 0, "minute": 0, "second": 0}
+        
+        return None
 
     def get_alarm_time(self):
         return self.alarm_time
@@ -168,15 +172,17 @@ class RealTimeClock:
 
     def get_formatted_alarm_from_file(self):
         alarm_time = self.load_alarm_time()
-        # We need to create a full tuple to mimic the rtc.datetime() method
-        formatted_alarm = (
-            0, 0, 0,  # Year, Month, Day (placeholders)
-            0,        # Weekday (placeholder)
-            alarm_time["hour"], 
-            alarm_time["minute"], 
-            alarm_time["second"]
-        )
-        return self.format_datetime(formatted_alarm)
+        if alarm_time:
+            # We need to create a full tuple to mimic the rtc.datetime() method
+            formatted_alarm = (
+                0, 0, 0,  # Year, Month, Day (placeholders)
+                0,        # Weekday (placeholder)
+                alarm_time["hour"], 
+                alarm_time["minute"], 
+                alarm_time["second"]
+            )
+            return self.format_datetime(formatted_alarm)
+        return None
 
     def file_exists(self, filepath):
         try:

@@ -4,7 +4,6 @@ from encoder import RotaryEncoder
 import time
 import sys
 import uos
-from config import Config #TODO: remove
 from ui import UI
 
 

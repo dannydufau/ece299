@@ -159,11 +159,11 @@ class RotaryEncoder:
             self.transition_count += 1
             self.last_transition_time = current_time  # Update the last transition time
 
-            # Check for a complete cycle
+            # Check for a complete encoder cycle
             if self.transition_count == 4:
                 self.transition_count = 0
                 
-                self.led.toggle(50)
+                self.led.on_ms(50)
                 # Determine direction and update counter
                 # Clockwise transitions
                 if ((self.last_state == 0 and state == 1) or
