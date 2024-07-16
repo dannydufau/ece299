@@ -49,7 +49,8 @@ class RotaryEncoder:
         self.rollover = rollover
         self.max = max
         self.min = min
-        self.counter = 0
+        #self.counter = 0
+        self.counter = 1
         self.direction = ""
         self.state = (self.pin_a.value() * 2) + self.pin_b.value()
         self.last_state = self.state

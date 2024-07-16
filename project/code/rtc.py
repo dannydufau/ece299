@@ -1,13 +1,15 @@
 import machine
 import utime
 import uos
+import random
 from ds1307 import DS1307
 from square_wave_generator import SquareWaveGenerator
 
 
 class RealTimeClock:
     CONFIG_FILE = "time_mode_config.txt"
-    ALARM_FILE = "alarm_time.txt"
+    ALARM_FILE_PREFIX = "alarm_"
+    ALARM_FILE_SUFFIX = ".txt"
 
     def __init__(self):
         self.weekday_map = {
@@ -33,9 +35,6 @@ class RealTimeClock:
         current_time = self.rtc.datetime()
         print(f"Loaded RTC. Time: {current_time}")
 
-        # Load the alarm time into a class property
-        self.alarm_time = self.get_formatted_alarm_from_file()
-        
         # Create alarm sound instances
         self.alarm = SquareWaveGenerator(22, 888)  # GP22, 1 kHz frequency
 
@@ -49,7 +48,6 @@ class RealTimeClock:
         # Normalize the weekday to an integer
         if isinstance(weekday, str):
             weekday_lower = weekday.lower()
-
             # Default to 0 (Sunday) if not found
             weekday_int = self.weekday_map.get(weekday_lower, 0)
         else:
@@ -58,7 +56,6 @@ class RealTimeClock:
         try:
             print(f"Setting RTC datetime to: {year}-{month}-{day} {hour}:{minute}:{second} Weekday: {weekday_int}")
             self.rtc.datetime((year, month, day, weekday_int, hour, minute, second))
-        
         except Exception as e:
             print(f"Failed setting the date and time.\n{e}")
 
@@ -79,26 +76,26 @@ class RealTimeClock:
                     mode = int(file.read().strip())
                     print(f"Time mode {mode} loaded from {self.CONFIG_FILE}")
                     return mode
-
         except Exception as e:
             print(f"Failed to load time mode. Defaulting to 24-hour mode. Error: {e}")
         return 1  # Default to 24-hour mode if loading fails
 
-    def save_alarm_time(self, alarm_time):
+    def save_alarm_time(self, alarm_id, alarm_time):
         try:
-            with open(self.ALARM_FILE, 'w') as file:
+            alarm_file = f"{self.ALARM_FILE_PREFIX}{alarm_id}{self.ALARM_FILE_SUFFIX}"
+            with open(alarm_file, 'w') as file:
                 file.write(f"{alarm_time['hour']}\n")
                 file.write(f"{alarm_time['minute']}\n")
                 file.write(f"{alarm_time['second']}\n")
             print(f"Alarm time saved: {alarm_time}")
-
         except Exception as e:
             print(f"Failed to save alarm time: {e}")
 
-    def load_alarm_time(self):
+    def load_alarm_time(self, alarm_id):
         try:
-            if self.file_exists(self.ALARM_FILE):
-                with open(self.ALARM_FILE, 'r') as file:
+            alarm_file = f"{self.ALARM_FILE_PREFIX}{alarm_id}{self.ALARM_FILE_SUFFIX}"
+            if self.file_exists(alarm_file):
+                with open(alarm_file, 'r') as file:
                     lines = file.readlines()
                     if len(lines) >= 3:
                         return {
@@ -106,15 +103,26 @@ class RealTimeClock:
                             "minute": int(lines[1].strip()),
                             "second": int(lines[2].strip())
                         }
-                    
         except Exception as e:
             print(f"Failed to load alarm time: {e}")
-        
         return None
 
-    def get_alarm_time(self):
-        return self.alarm_time
-    
+    def get_alarm_time(self, alarm_id):
+        return self.load_alarm_time(alarm_id)
+
+    def get_alarm_times(self):
+        """
+        Scan for all alarm files and return a list of tuples (alarm_id, time).
+        """
+        alarm_times = []
+        for filename in uos.listdir():
+            if filename.startswith(self.ALARM_FILE_PREFIX) and filename.endswith(self.ALARM_FILE_SUFFIX):
+                alarm_id = filename[len(self.ALARM_FILE_PREFIX):-len(self.ALARM_FILE_SUFFIX)]
+                alarm_time = self.load_alarm_time(alarm_id)
+                if alarm_time:
+                    alarm_times.append((alarm_id, alarm_time))
+        return alarm_times
+
     def format_datetime(self, datetime):
         try:
             year, month, day, weekday, hour, minute, second, *_ = datetime  # Use * to handle additional values
@@ -144,7 +152,6 @@ class RealTimeClock:
             print(f"error in format_datetime: {e}")
             raise
 
-
     def get_formatted_datetime_from_module(self):
         """
         Get the current datetime data via i2c. If an interrupt handling operation
@@ -154,7 +161,6 @@ class RealTimeClock:
         """
         try:
             return self.format_datetime(self.rtc.datetime())
-        
         except OSError as e:
             # Return null values on [Errno 110] ETIMEDOUT
             print(f"Error fetching datetime: {e}")
@@ -170,26 +176,18 @@ class RealTimeClock:
                 "second": 0
             }
 
-    def get_formatted_alarm_from_file(self):
-        alarm_time = self.load_alarm_time()
-        if alarm_time:
-            # We need to create a full tuple to mimic the rtc.datetime() method
-            formatted_alarm = (
-                0, 0, 0,  # Year, Month, Day (placeholders)
-                0,        # Weekday (placeholder)
-                alarm_time["hour"], 
-                alarm_time["minute"], 
-                alarm_time["second"]
-            )
-            return self.format_datetime(formatted_alarm)
-        return None
-
     def file_exists(self, filepath):
         try:
             uos.stat(filepath)
             return True
         except OSError:
             return False
+
+    def new_alarm(self):
+        """
+        Generate a new alarm ID using a random number.
+        """
+        return str(random.randint(100000, 999999))
 
 
 if __name__ == "__main__":

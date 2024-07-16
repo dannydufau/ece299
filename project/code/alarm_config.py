@@ -1,20 +1,32 @@
-import uos
+# alarm_config.py
 from machine import Pin, Timer
-#from display import CR_SPI_Display
+from display import CR_SPI_Display
 from encoder import RotaryEncoder
+import time
+import sys
+import uos
 from ui import UI
 
 
 class AlarmConfig(UI):
-    def __init__(self, display, rtc, encoder_pins, led_pin):
+    def __init__(
+        self,
+        display,
+        rtc,
+        encoder_pins,
+        led_pin,
+        header,
+        alarm_id,
+        min=0,
+        max=60,
+        next_config=None,
+    ):
         self.display = display
         self.rtc = rtc
-        self.encoder_pins = encoder_pins
-        self.led_pin = led_pin
-        self.header = "Disable Alarm"
-        self.selection = ["Disable Alarm"]
+        self.header = header
+        self.next_config = next_config
         self.current_value = 0
-
+        self.alarm_id = alarm_id
         self.update_display()
 
         # Create an instance of the RotaryEncoder
@@ -24,8 +36,8 @@ class AlarmConfig(UI):
             pin_switch=encoder_pins[2], 
             led_pin=led_pin, 
             rollover=True, 
-            max=1, 
-            min=0
+            max=max, 
+            min=min
         )
 
     def update_display(self):
@@ -34,7 +46,7 @@ class AlarmConfig(UI):
         """
         self.display.clear()
         self.display.update_text(self.header, 0, 0)
-        self.display.update_text("turn off", 0, 1)
+        self.display.update_text(str(self.current_value), 0, 1)
 
     def poll_selection_change_and_update_display(self):
         """
@@ -45,16 +57,23 @@ class AlarmConfig(UI):
             self.current_value = new_value
             self.update_display()
 
-    def get_selection(self):
+    def get_context(self):
         """
         If the encoder button is pressed, perform duties
         associated with the selected item and return the
         next menu.
         """
         if self.is_encoder_button_pressed():
-            self.rtc.alarm_off()
-            return {"id": "main_menu", "display_text": "Main Menu"}
-        return None
+            self.save_alarm_time()
+            if self.next_config:
+                self.encoder.reset_counter()
+                self.update_display()
+                #return self.next_config
+                return{
+                    "id": self.next_config["id"],
+                    "context": {"alarm_id": self.alarm_id}
+                }
+        return {"id": "main_menu", "display_text": "Main Menu"}
 
     def is_encoder_button_pressed(self):
         return self.encoder.get_button_state()
@@ -67,3 +86,40 @@ class AlarmConfig(UI):
         self.encoder.pin_a.irq(handler=None)
         self.encoder.pin_b.irq(handler=None)
         self.encoder.button.disable_irq()
+
+    def save_alarm_time(self):
+        """
+        Description:
+        Saves hour, minute, second values to the alarm file. We determine
+        what metric needs to be saved based on the header specifies. The
+        header tells us if the user is currently setting hours, minutes, or
+        seconds.
+        """
+        # Get the current alarm time stored to file
+        alarm_time = self.rtc.get_alarm_time(self.alarm_id)
+        if not alarm_time:
+            # set the default
+            alarm_time = {"hour": 0, "minute": 0, "second": 0}
+        print(f"current alarm read in: {alarm_time}")
+        # Determine which time parameter to update based on the header
+        if self.header == "Hour":
+            alarm_time["hour"] = int(self.current_value)
+        elif self.header == "Minute":
+            alarm_time["minute"] = int(self.current_value)
+        elif self.header == "Seconds":
+            alarm_time["second"] = int(self.current_value)
+        
+        # Save the new alarm time to file
+        self.rtc.save_alarm_time(self.alarm_id, alarm_time)
+        
+        # Reset the encoder counter after saving the alarm time
+        self.encoder.reset_counter()
+
+    def get_saved_alarm(self):
+        """
+        Returns any saved alarm or None if no alarm is saved.
+        """
+        alarm_time = self.rtc.get_alarm_time(self.alarm_id)
+        if alarm_time:
+            return alarm_time
+        return None

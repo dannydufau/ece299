@@ -39,7 +39,8 @@ class TimeMode(UI):
             self.current_mode = new_mode
             self.update_display()
 
-    def get_selection(self):
+    def get_context(self):
+    #def get_selection(self):
         print("get_selection called")
         if self.is_encoder_button_pressed():
             self.set_time_mode()

@@ -21,7 +21,8 @@ class Menu(UI):
         header,
         selectables,
         id,
-        cursor=">"
+        cursor=">",
+        context=None
     ):
         self.display = display
         self.header = header
@@ -29,6 +30,9 @@ class Menu(UI):
         self.selectables_count = len(selectables)
         self.cursor_icon = cursor
         self.id = id
+        
+        # stores information to pass to the next UI
+        self.context = context or {}
 
         try:
             self.encoder = RotaryEncoder(
@@ -36,8 +40,9 @@ class Menu(UI):
                 pin_b=encoder_pins[1], 
                 pin_switch=encoder_pins[2], 
                 led_pin=led_pin, 
-                rollover=True, 
-                max=self.selectables_count
+                rollover=True,
+                max=self.selectables_count,
+                min=1
             )
         except Exception as e:
             sys.print_exception(e)
@@ -84,16 +89,40 @@ class Menu(UI):
     def is_encoder_button_pressed(self):
         return self.encoder.get_button_state()
     
-    def get_selection(self):
-        selected_index = self._get_cursor_position_modulus()
-        print(f"get_selection: {self.selectables[selected_index]}")
-        return {"id": self.selectables[selected_index]["id"], "display_text": self.selectables[selected_index]["display_text"]}
+    #def get_selection(self):
+    def get_context(self):
+        """
+        If the encoder button is pressed, perform duties
+        associated with the selected item and return the
+        next menu ID and context.
+        """
+        if self.is_encoder_button_pressed():
+            selected_index = self.encoder.get_counter()[0]-1
+            print(f"INDEX: {selected_index}")
+            selected_item = self.selectables[selected_index]
+            return {"id": selected_item["id"], "context": self.context}
+        return None
+    
+    #def get_selection(self):
+    #    selected_index = self._get_cursor_position_modulus()
+    #    print(f"get_selection: {self.selectables[selected_index]}")
+    #    return {"id": self.selectables[selected_index]["id"], "display_text": self.selectables[selected_index]["display_text"]}
 
+    def resetNOTUSING(self):
+        self.encoder.reset_counter()
+        self.update_display()
+
+    def stopNOTUSING(self):
+        self.encoder.pin_a.irq(handler=None)
+        self.encoder.pin_b.irq(handler=None)
+        self.encoder.button.disable_irq()
+        
     def _disable_interrupts(self):
         print("disable interrupts")
         self.encoder.pin_a.irq(handler=None)
         self.encoder.pin_b.irq(handler=None)
         self.encoder.button.disable_irq()
+        self.display.clear()
 
     def stop(self):
         self._disable_interrupts()

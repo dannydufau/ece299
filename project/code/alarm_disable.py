@@ -7,16 +7,16 @@ import uos
 from ui import UI
 
 
-class TimeConfig(UI):
+class AlarmDisable(UI):
     def __init__(
         self,
         display,
         rtc,
         encoder_pins,
         led_pin,
-        header,
+        header="Disable Alarm",
         min=0,
-        max=60,
+        max=1,
         next_config=None
     ):
         self.display = display
@@ -62,7 +62,7 @@ class TimeConfig(UI):
         next menu.
         """
         if self.is_encoder_button_pressed():
-            self.write_time_to_rtc()
+            self.disable_alarm()
             if self.next_config:
                 self.encoder.reset_counter()
                 self.update_display()
@@ -81,38 +81,9 @@ class TimeConfig(UI):
         self.encoder.pin_b.irq(handler=None)
         self.encoder.button.disable_irq()
 
-    def write_time_to_rtc(self):
+    def disable_alarm(self):
         """
-        Description: Sets the time. Writes the time metric stored in current_value to
-        the RTC module.
+        Disable the alarm in the RTC module.
         """
-        # Read the current datetime the module is configured to
-        current_datetime = self.rtc.get_formatted_datetime_from_module()
-        
-        new_hour = int(current_datetime["hour"])
-        new_minute = int(current_datetime["minute"])
-        new_second = int(current_datetime["second"])
-        new_weekday = self.rtc.weekday_map[current_datetime["weekday"].lower()]
-        
-        # Determine which metric to update depending on the header
-        if self.header == "Hour":
-            new_hour = int(self.current_value)
-        elif self.header == "Minute":
-            new_minute = int(self.current_value)
-        elif self.header == "Seconds":
-            new_second = int(self.current_value)
-        
-        # Update the RTC module
-        try:
-            self.rtc.rtc.datetime((int(current_datetime["year"]),
-                                   int(current_datetime["month"]),
-                                   int(current_datetime["day"]),
-                                   new_weekday,
-                                   new_hour,
-                                   new_minute,
-                                   new_second))
-        except Exception as e:
-            print(f"Failed setting the date and time directly.\n{e}")
-
-        # Reset the encoder counter after writing the time
+        self.rtc.alarm_off()
         self.encoder.reset_counter()
