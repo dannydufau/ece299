@@ -78,15 +78,46 @@ class RealTimeClock:
                     return mode
         except Exception as e:
             print(f"Failed to load time mode. Defaulting to 24-hour mode. Error: {e}")
-        return 1  # Default to 24-hour mode if loading fails
+        # Default to 24-hour mode if loading fails
+        return 1
+
+    def find_alarm_by_time(self, alarm):
+        """
+        Find the alarm ID by time. Return None if no match is found.
+        """
+        for alarm_id, alarm_time in self.get_alarm_times():
+            if (alarm_time['hour'] == alarm['hour'] and
+                alarm_time['minute'] == alarm['minute'] and
+                alarm_time['second'] == alarm['second']):
+                return alarm_id
+        return None
+    
+    def delete_alarm(self, alarm_id):
+        """
+        Delete the alarm file corresponding to the given alarm ID.
+        """
+        alarm_file = f"{self.ALARM_FILE_PREFIX}{alarm_id}{self.ALARM_FILE_SUFFIX}"
+        try:
+            if self.file_exists(alarm_file):
+                uos.remove(alarm_file)
+                print(f"Deleted alarm: {alarm_id}")
+        except Exception as e:
+            print(f"Failed to delete alarm {alarm_id}: {e}")
 
     def save_alarm_time(self, alarm_id, alarm_time):
         try:
             alarm_file = f"{self.ALARM_FILE_PREFIX}{alarm_id}{self.ALARM_FILE_SUFFIX}"
+            
+            # delete possible older duplicates
+            dup_id = self.find_alarm_by_time(alarm_time)
+            if dup_id and dup_id != alarm_id:
+                self.delete_alarm(dup_id)
+            
             with open(alarm_file, 'w') as file:
                 file.write(f"{alarm_time['hour']}\n")
                 file.write(f"{alarm_time['minute']}\n")
-                file.write(f"{alarm_time['second']}\n")
+                file.write(f"{alarm_time['second']}\n")        
+
             print(f"Alarm time saved: {alarm_time}")
         except Exception as e:
             print(f"Failed to save alarm time: {e}")
@@ -205,8 +236,4 @@ if __name__ == "__main__":
     while True:
         datetime = rtc.datetime()
         print('Raw datetime:', datetime)
-        year, month, day, weekday, hour, minute, second, *_ = datetime  # Use * to handle additional values
-        print("{weekday}")
-        print("Date: {:04d}-{:02d}-{:02d}".format(year, month, day))
-        print("Time: {:02d}:{:02d}:{:02d}".format(hour, minute, second))
-        utime.sleep(1)
+        year, month, day, weekday, hour, minute, second, *_ = datetime  # Use * to handle add

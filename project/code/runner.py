@@ -170,6 +170,8 @@ timer = Timer()
 
 
 def timer_callback(timer):
+    # Clear the existing display to remove old data
+    report_display.clear()
     # Get RTC data and update the display
     rtc_data = rtc.get_formatted_datetime_from_module()
 
