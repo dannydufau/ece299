@@ -18,15 +18,21 @@ class UI:
         self.led_pin = led_pin
         self.header = header
         self.display = None
+        self.encoder = None
 
     def poll_selection_change_and_update_display(self):
         raise NotImplementedError
 
-    def get_selection(self):
+    def select_action(self):
         raise NotImplementedError
 
     def is_encoder_button_pressed(self):
         raise NotImplementedError
 
     def stop(self):
-        raise NotImplementedError
+        if self.encoder:
+            self.encoder.pin_a.irq(handler=None)
+            self.encoder.pin_b.irq(handler=None)
+            self.encoder.button.disable_irq()
+        if self.display:
+            self.display.clear()

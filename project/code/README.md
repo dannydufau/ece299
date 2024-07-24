@@ -1,16 +1,5 @@
 Issues to discuss:
 
-Deploy notes:
-
-rshell
-connect serial /dev/ttyACM0
-cp /pyboard/main.py .
-cp main.py /pyboard/
-ls /pyboard
-exit
-
-
-##
 talk about max_recursion (code saved in dir)
 
 i2c timeout getting rtc data, likely do to 'long' interrupt handling

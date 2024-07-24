@@ -76,8 +76,8 @@ class CR_SPI_Display:
         self.max_columns = self.oled.width // self.char_width_px
         self.max_rows = self.oled.height // self.char_height_px
         
-        print(f"max columns: {self.max_columns}")
-        print(f"max rows: {self.max_rows}")
+        #print(f"max columns: {self.max_columns}")
+        #print(f"max rows: {self.max_rows}")
 
     def clear(self):
         """

@@ -9,40 +9,44 @@ from context_queue import context_queue
 from context import Context
 
 
-class AlarmDisable(UI):
-    def __init__(self, display, rtc, encoder_pins, led_pin):
+class AlarmDelete(UI):
+    def __init__(
+        self,
+        display,
+        rtc,
+        encoder_pins,
+        led_pin,
+        alarm_id,
+        header="Delete Alarm",
+        min=0,
+        max=1,
+        next_config={"id": "main_menu", "display_text": "Main Menu"}
+    ):
         self.display = display
         self.rtc = rtc
-        self.encoder_pins = encoder_pins
-        self.led_pin = led_pin
+        self.alarm_id = alarm_id
+        self.current_value = 0
 
         # Load context and populate properties
         self.ui_context = self.load_context()
-        
-        # Default to "Disable Alarm" if not provided
-        self.header = self.ui_context.get("header", "Disable Alarm?")
+        self.header = self.ui_context.get("header", "Delete Alarm?")
         self.min = self.ui_context.get("min", 0)
         self.max = self.ui_context.get("max", 1)
         self.current_value = self.min
-        
-        # Initialize the encoder
-        try:
-            self.encoder = RotaryEncoder(
-                pin_a=encoder_pins[0], 
-                pin_b=encoder_pins[1], 
-                pin_switch=encoder_pins[2], 
-                led_pin=led_pin, 
-                rollover=True,
-                max=self.max,
-                min=self.min
-            )
-        except Exception as e:
-            sys.print_exception(e)
-            print("ENCODER NOT CREATED FOR ALARM DISABLE")
-            raise
 
-        # Initialize other components and state as needed
         self.update_display()
+
+        # Create an instance of the RotaryEncoder
+        self.encoder = RotaryEncoder(
+            pin_a=encoder_pins[0], 
+            pin_b=encoder_pins[1], 
+            pin_switch=encoder_pins[2], 
+            led_pin=led_pin, 
+            rollover=True, 
+            max=max, 
+            min=min
+        )
+        print("IN DELETE")
 
     def load_context(self):
         """
@@ -50,14 +54,12 @@ class AlarmDisable(UI):
         """
         context = context_queue.dequeue()
         if context:
-            print(f"alarm_disable,load_context,dequeue\n{context.router_context}\n{context.ui_context}\n{context_queue.size()}")
+            print(f"alarm_delete,load_context,dequeue\n{context.router_context}\n{context.ui_context}\n{context_queue.size()}")
         else:
-            print("alarm_disable,load_context,dequeue: No context available")
+            print("alarm_delete,load_context,dequeue: No context available")
 
         if isinstance(context, Context):
             return context.ui_context
-
-        return context if context else {}
 
     def update_display(self):
         """
@@ -77,11 +79,6 @@ class AlarmDisable(UI):
             self.current_value = new_value
             self.update_display()
 
-    def select_action(self):
-        self.disable_alarm()
-        self.build_context()
-        return self.ui_context
-
     def build_context(self):
         next_ui_id = "main_menu"
         
@@ -94,6 +91,18 @@ class AlarmDisable(UI):
         }
         router_context = {"next_ui_id": next_ui_id}
         context_queue.add_to_queue(Context(router_context=router_context, ui_context=ui_context))
+                    
+    def select_action(self):
+        if self.current_value == 0:
+            print("should next config should be main")
+        else:
+            self.delete_alarm()
+        self.build_context()
+        
+        # Do we need these next two lines?
+        self.encoder.reset_counter()
+        self.update_display()
+        return self.ui_context
 
     def is_encoder_button_pressed(self):
         if self.encoder.get_button_state():
@@ -102,20 +111,17 @@ class AlarmDisable(UI):
         return False
 
     def reset(self):
-        self.current_value = self.min
+        self.current_value = 0
         self.update_display()
 
     def stop(self):
-        if self.encoder:
-            self.encoder.pin_a.irq(handler=None)
-            self.encoder.pin_b.irq(handler=None)
-            self.encoder.button.disable_irq()
-        if self.display:
-            self.display.clear()
+        self.encoder.pin_a.irq(handler=None)
+        self.encoder.pin_b.irq(handler=None)
+        self.encoder.button.disable_irq()
 
-    def disable_alarm(self):
+    def delete_alarm(self):
         """
-        Disable the alarm in the RTC module.
+        Delete the alarm in the RTC module.
         """
-        self.rtc.alarm_off()
+        self.rtc.delete_alarm(self.alarm_id)
         self.encoder.reset_counter()

@@ -1,4 +1,4 @@
-class SimpleQueue:
+class Queue:
     def __init__(self):
         self.queue = []
 
@@ -6,9 +6,12 @@ class SimpleQueue:
         self.queue.append(item)
 
     def get(self):
-        if not self.is_empty():
+        if not self.empty():
             return self.queue.pop(0)
         return None
 
-    def is_empty(self):
+    def empty(self):
         return len(self.queue) == 0
+
+    def size(self):
+        return len(self.queue)

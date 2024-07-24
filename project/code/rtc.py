@@ -8,6 +8,7 @@ from square_wave_generator import SquareWaveGenerator
 
 class RealTimeClock:
     CONFIG_FILE = "time_mode_config.txt"
+    SNOOZE_FILE_PREFIX = "snooze_"
     ALARM_FILE_PREFIX = "alarm_"
     ALARM_FILE_SUFFIX = ".txt"
 
@@ -35,13 +36,24 @@ class RealTimeClock:
         current_time = self.rtc.datetime()
         print(f"Loaded RTC. Time: {current_time}")
 
+        # Initialize alarm active flag
+        self.alarm_active = False
+    
         # Create alarm sound instances
         self.alarm = SquareWaveGenerator(22, 888)  # GP22, 1 kHz frequency
 
+    def is_alarm_active(self):
+        """
+        Check if any alarm is currently active.
+        """
+        return self.alarm_active
+    
     def alarm_on(self):
+        self.alarm_active = True
         self.alarm.start()
     
     def alarm_off(self):
+        self.alarm_active = False
         self.alarm.stop()
 
     def set_datetime(self, year, month, day, weekday, hour, minute, second):
@@ -85,7 +97,20 @@ class RealTimeClock:
         """
         Find the alarm ID by time. Return None if no match is found.
         """
+        for alarm_id, alarm_time in self.get_all_alarm_times():  # Use get_all_alarm_times to include snoozes
+            print(f"FIND: alarm_time: {alarm_time}, alarm: {alarm}")
+            if (alarm_time['hour'] == alarm['hour'] and
+                alarm_time['minute'] == alarm['minute'] and
+                alarm_time['second'] == alarm['second']):
+                return alarm_id
+        return None
+
+    def find_alarm_by_timeBaK(self, alarm):
+        """
+        Find the alarm ID by time. Return None if no match is found.
+        """
         for alarm_id, alarm_time in self.get_alarm_times():
+            print(f"FIND: alarm_time: {alarm_time}, alarm: {alarm}")
             if (alarm_time['hour'] == alarm['hour'] and
                 alarm_time['minute'] == alarm['minute'] and
                 alarm_time['second'] == alarm['second']):
@@ -104,43 +129,97 @@ class RealTimeClock:
         except Exception as e:
             print(f"Failed to delete alarm {alarm_id}: {e}")
 
-    def save_alarm_time(self, alarm_id, alarm_time):
-        try:
-            alarm_file = f"{self.ALARM_FILE_PREFIX}{alarm_id}{self.ALARM_FILE_SUFFIX}"
-            
-            # delete possible older duplicates
-            dup_id = self.find_alarm_by_time(alarm_time)
-            if dup_id and dup_id != alarm_id:
-                self.delete_alarm(dup_id)
-            
-            with open(alarm_file, 'w') as file:
-                file.write(f"{alarm_time['hour']}\n")
-                file.write(f"{alarm_time['minute']}\n")
-                file.write(f"{alarm_time['second']}\n")        
 
-            print(f"Alarm time saved: {alarm_time}")
-        except Exception as e:
-            print(f"Failed to save alarm time: {e}")
+    # Updating save_alarm_time to accept prefix
+    def save_alarm_time(self, alarm_id, alarm_time, prefix):
+        self.save_time_to_file(alarm_id, alarm_time, prefix=prefix)
+        print(f"Alarm time saved: {alarm_time}")
 
-    def load_alarm_time(self, alarm_id):
+    # Adjusting method signature for save_time_to_file
+    def save_time_to_file(self, time_id, time_data, prefix):
+        """
+        Save time data to a file with the specified prefix.
+        """
+        filename = f"{prefix}{time_id}.txt"
         try:
-            alarm_file = f"{self.ALARM_FILE_PREFIX}{alarm_id}{self.ALARM_FILE_SUFFIX}"
-            if self.file_exists(alarm_file):
-                with open(alarm_file, 'r') as file:
-                    lines = file.readlines()
-                    if len(lines) >= 3:
-                        return {
-                            "hour": int(lines[0].strip()),
-                            "minute": int(lines[1].strip()),
-                            "second": int(lines[2].strip())
-                        }
+            with open(filename, 'w') as file:
+                file.write(f"{time_data['hour']:02d}\n")
+                file.write(f"{time_data['minute']:02d}\n")
+                file.write(f"{time_data['second']:02d}\n")
+            print(f"Time saved to {filename}: {time_data}")
         except Exception as e:
-            print(f"Failed to load alarm time: {e}")
+            print(f"Failed to save time to {filename}: {e}")
+
+    def new_alarm(self, alarm_time):
+        """
+        Create a new alarm with a unique ID and save the alarm time to a file.
+        """
+        alarm_id = self.new_id()
+        self.save_time_to_file(alarm_id, alarm_time, prefix=self.ALARM_FILE_PREFIX)
+        return alarm_id
+
+    def new_snooze(self, snooze_minutes):
+        """
+        Create a new snooze with a unique ID and save the snooze time to a file.
+        """
+        current_time = self.rtc.datetime()
+        snooze_time = {
+            "hour": (current_time[4] + (current_time[5] + snooze_minutes) // 60) % 24,
+            "minute": (current_time[5] + snooze_minutes) % 60,
+            "second": current_time[6]
+        }
+        snooze_id = self.new_id()
+        self.save_time_to_file(snooze_id, snooze_time, prefix=self.SNOOZE_FILE_PREFIX)
+        print(f"IN NEW_SNOOZE: {snooze_time}")
+        return snooze_id, snooze_time
+    
+    def new_id(self):
+        """
+        Generate a new ID using a random number.
+        """
+        return str(random.randint(100000, 999999))
+
+    def load_time(self, alarm_id, prefix):
+        try:
+            with open(f"{prefix}{alarm_id}.txt", 'r') as file:
+                lines = file.readlines()
+                if len(lines) >= 3:
+                    return {
+                        "hour": int(lines[0].strip()),
+                        "minute": int(lines[1].strip()),
+                        "second": int(lines[2].strip())
+                    }
+        except Exception as e:
+            print(f"Failed to read {prefix}{alarm_id}.txt: {e}")
         return None
 
     def get_alarm_time(self, alarm_id):
-        return self.load_alarm_time(alarm_id)
+        return self.load_time(alarm_id, prefix=ALARM_FILE_PREFIX)
 
+    def get_all_alarm_times(self):
+        alarms = self.get_alarm_times()
+        snoozes = self.get_snooze_time()
+        #print(f"snoozes: {snoozes}")
+        #print(f"alarms: {alarms}")
+        return alarms + snoozes
+
+    def get_snooze_time(self):
+        """
+        Scan for all snooze files and return a list of tuples (snooze_id, time).
+        Raises an error if more than one snooze file is found.
+        """
+        snooze_times = []
+        for filename in uos.listdir():
+            if filename.startswith(self.SNOOZE_FILE_PREFIX):
+                snooze_id = filename[len(self.SNOOZE_FILE_PREFIX):-4]  # Remove prefix and .txt suffix
+                snooze_time = self.load_time(snooze_id, prefix=self.SNOOZE_FILE_PREFIX)
+                if snooze_time:
+                    snooze_times.append((snooze_id, snooze_time))
+                    
+        if len(snooze_times) > 1:
+            raise Exception("More than one snooze file found")
+        return snooze_times if snooze_times else []
+    
     def get_alarm_times(self):
         """
         Scan for all alarm files and return a list of tuples (alarm_id, time).
@@ -149,7 +228,7 @@ class RealTimeClock:
         for filename in uos.listdir():
             if filename.startswith(self.ALARM_FILE_PREFIX) and filename.endswith(self.ALARM_FILE_SUFFIX):
                 alarm_id = filename[len(self.ALARM_FILE_PREFIX):-len(self.ALARM_FILE_SUFFIX)]
-                alarm_time = self.load_alarm_time(alarm_id)
+                alarm_time = self.load_time(alarm_id, prefix=self.ALARM_FILE_PREFIX)
                 if alarm_time:
                     alarm_times.append((alarm_id, alarm_time))
         return alarm_times
@@ -214,12 +293,16 @@ class RealTimeClock:
         except OSError:
             return False
 
-    def new_alarm(self):
-        """
-        Generate a new alarm ID using a random number.
-        """
-        return str(random.randint(100000, 999999))
-
+    def delete_all_snooze_files(self):
+        files = uos.listdir()
+        for file in files:
+            if file.startswith(self.SNOOZE_FILE_PREFIX):
+                try:
+                    uos.remove(file)
+                    print(f"Deleted snooze file: {file}")
+                except Exception as e:
+                    print(f"Failed to delete snooze file: {file}\n{e}")
+    
 
 if __name__ == "__main__":
     # Initialize I2C0

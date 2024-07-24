@@ -3,15 +3,54 @@ from time_config import TimeConfig
 from time_mode import TimeMode
 from alarm_config import AlarmConfig
 from alarm_disable import AlarmDisable
+from alarm_delete import AlarmDelete
+from alarm_snooze import AlarmSnooze
+from context_queue import context_queue
+from context import Context
 
 
 def get_list_from_range(low, high):
     return [str(i) for i in range(low, high)]
 
 
-# Configuration functions
 def start_alarm_disable_config(display, rtc):
     return AlarmDisable(
+        display=display,
+        rtc=rtc,
+        encoder_pins=(19, 18, 20),
+        led_pin=15,
+    )
+
+
+def start_snooze_config(display, rtc):
+    # Just return the main menu if the alarm isn't triggered
+    print(f"start_snooze_config {rtc.is_alarm_active()}")
+    if not rtc.is_alarm_active():
+        context = Context(
+            router_context={"next_ui_id": "main_menu"},
+            ui_context={
+                "header": "Main Menu",
+                "selectables": [
+                    {"display_text": "Time", "id": "time_menu"},
+                    {"display_text": "Radio", "id": "radio_menu"}
+                ]
+            }
+        )
+        context_queue.add_to_queue(context)
+        return start_main_menu(display)
+    
+    # Otherwise return the snooze alarm config
+    context = Context(
+        router_context={"next_ui_id": "main_menu"},
+        ui_context={
+            "header": "Disable Snooze?",
+            "min": 0,
+            "max": 1,
+            "snooze": True
+        }
+    )
+    context_queue.add_to_queue(context)
+    return AlarmSnooze(
         display=display,
         rtc=rtc,
         encoder_pins=(19, 18, 20),
@@ -24,173 +63,115 @@ def start_volume_config(display):
         display=display,
         encoder_pins=(19, 18, 20),
         led_pin=15,
-        header="Set the Volume",
-        selectables=get_list_from_range(1, 5),
         id="set_volume"
     )
 
 
-def start_hour_config(
-    display,
-    rtc,
-    next_config={"id": "set_minute", "display_text": "Set Minutes"}
-):
-    return TimeConfig(
+def start_list_alarms(display, rtc):
+    current_context = context_queue.dequeue()
+
+    alarms = rtc.get_alarm_times()
+    selectables = [
+        {
+            "display_text": f"{alarm[1]['hour']:02d}:{alarm[1]['minute']:02d}:{alarm[1]['second']:02d}",
+            "id": "delete_alarm",
+            "context": {"alarm_id": alarm[0]}
+        }
+        for alarm in alarms
+    ] or [{"display_text": "No alarms set", "id": "main_menu"}]
+
+    context = Context(
+        router_context={"next_ui_id": "list_alarms"},
+        ui_context={
+            "header": "Alarm Delete",
+            "selectables": selectables
+        }
+    )
+    #print(f"LIST UI: {context.ui_context}")
+    #print(f"LIST ROUTER: {context.router_context}")
+    context_queue.add_to_queue(context)
+    return Menu(display, encoder_pins=(19, 18, 20), led_pin=15, id="list_alarms")
+
+
+def start_delete_alarm_config(display, rtc, alarm_id):
+    return AlarmDelete(
         display=display,
         rtc=rtc,
         encoder_pins=(19, 18, 20),
         led_pin=15,
-        header="Hour",
-        next_config=next_config,
-        min=1,
-        max=24,
+        alarm_id=alarm_id
     )
 
 
-def start_minute_config(
-    display,
-    rtc,
-    next_config={"id": "set_seconds", "display_text": "Set Seconds"}
-):
-    return TimeConfig(
-        display=display,
-        rtc=rtc,
-        encoder_pins=(19, 18, 20),
-        led_pin=15,
-        header="Minute",
-        next_config=next_config,
-        min=0,
-        max=59,
-    )
-
-
-def start_seconds_config(
-    display,
-    rtc,
-    next_config={"id": "main_menu", "display_text": "Main Menu"}
-):
-    return TimeConfig(
-        display=display,
-        rtc=rtc,
-        encoder_pins=(19, 18, 20),
-        led_pin=15,
-        header="Seconds",
-        next_config=next_config,
-        min=0,
-        max=59,
-    )
-
-
-def start_alarm_hour_config(
-    display,
-    rtc,
-    alarm_id,
-    next_config={"id": "set_minute_alarm", "display_text": "Set Alarm Minutes"},
-):
-    print(f"hour: alarm id: {alarm_id}")
+def start_alarm_config(display, rtc):
     return AlarmConfig(
         display=display,
         rtc=rtc,
         encoder_pins=(19, 18, 20),
         led_pin=15,
-        header="Hour",
-        next_config=next_config,
-        min=1,
-        max=24,
-        alarm_id=alarm_id
     )
 
-
-def start_alarm_minute_config(
-    display,
-    rtc,
-    alarm_id,
-    next_config={"id": "set_seconds_alarm", "display_text": "Set Alarm Seconds"},
-):
-    print(f"minute: alarm_id: {alarm_id}")
-    return AlarmConfig(
+def start_time_config(display, rtc):
+    return TimeConfig(
         display=display,
         rtc=rtc,
         encoder_pins=(19, 18, 20),
         led_pin=15,
-        header="Minute",
-        next_config=next_config,
-        min=0,
-        max=59,
-        alarm_id=alarm_id
     )
 
+def start_create_alarm(display, rtc):
+    # Init alarm set process.
+    # called from menu.py which wont know about context
+    context = context_queue.dequeue()
+    context.router_context["next_ui_id"] = "set_hour"
+    context.ui_context.update({
+        "header": "hour",
+        "min": 0,
+        "max": 24
+    })
+    context_queue.add_to_queue(context)
+    return start_alarm_config(display, rtc)
 
-def start_alarm_seconds_config(
-    display,
-    rtc,
-    alarm_id,
-    next_config={"id": "main_menu", "display_text": "Main Menu"},
-):
-    return AlarmConfig(
-        display=display,
-        rtc=rtc,
-        encoder_pins=(19, 18, 20),
-        led_pin=15,
-        header="Seconds",
-        next_config=next_config,
-        min=0,
-        max=59,
-        alarm_id=alarm_id
-    )
+
+def start_set_time(display, rtc):
+    context = context_queue.dequeue()
+    context.router_context["next_ui_id"] = "set_hour"
+    context.ui_context.update({
+        "header": "hour",
+        "min": 0,
+        "max": 23
+    })
+    context_queue.add_to_queue(context)
+    return start_time_config(display, rtc)
 
 
 def start_alarm_menu(display):
-    return Menu(
-        display=display,
-        encoder_pins=(19, 18, 20),
-        led_pin=15,
-        header="Alarm Menu",
-        selectables=[
-            {"display_text": "List Alarms", "id": "list_alarms"},
-            {"display_text": "Create Alarm", "id": "create_alarm"}
-        ],
-        id="alarm_menu"
-    )
-
-
-def start_list_alarms(display, rtc):
-    alarms = rtc.get_alarm_times()
-    selectables = [
-        {"display_text": f"{alarm[1]['hour']:02d}:{alarm[1]['minute']:02d}:{alarm[1]['second']:02d}", "id": "main_menu"}
-        for alarm in alarms
-    ] or [{"display_text": "No alarms set", "id": "main_menu"}]
-    return Menu(
-        display=display,
-        encoder_pins=(19, 18, 20),
-        led_pin=15,
-        header="List Alarms",
-        selectables=selectables,
-        id="list_alarms"
-    )
-
-
-def start_create_alarm(display, rtc):
-    # Generate a new alarm ID using the new_alarm method
-    # Note: we do this here so that hours_config is aware of the id on save
-    new_alarm_id = rtc.new_alarm()
-    # Pass the new alarm ID to the configuration
-    return start_alarm_hour_config(display, rtc, alarm_id=new_alarm_id)
+    context = context_queue.dequeue()
+    context.router_context["next_ui_id"] = "alarm_menu"
+    context.ui_context.update({
+        "header": "Alarm Menu",
+        "selectables": [
+            {"display_text": "New Alarm", "id": "new_alarm"},
+            {"display_text": "List", "id": "list_alarms"}
+        ]
+    })
+    context_queue.add_to_queue(context)
+    return Menu(display, encoder_pins=(19, 18, 20), led_pin=15, id="alarm_menu")
 
 
 def start_time_menu(display):
-    return Menu(
-        display=display,
-        encoder_pins=(19, 18, 20),
-        led_pin=15,
-        header="Time Menu",
-        selectables=[
-            {"display_text": "set time", "id": "set_hour"},
-            {"display_text": "set alarm", "id": "alarm_menu"},
-            {"display_text": "set time mode", "id": "set_time_mode"}
-        ],
-        id="time_menu"
-    )
+    context = context_queue.dequeue()
+    context.router_context["next_ui_id"] = "time_menu"
+    context.ui_context.update({
+        "header": "Time Menu",
+        "selectables": [
+            {"display_text": "Set Time", "id": "new_time"},
+            {"display_text": "Set Alarm", "id": "alarm_menu"},
+            {"display_text": "Set Time Mode", "id": "set_time_mode"}
+        ]
+    })
+    context_queue.add_to_queue(context)
+    return Menu(display, encoder_pins=(19, 18, 20), led_pin=15, id="time_menu")
 
 
 def start_time_mode_config(display, rtc):
@@ -199,54 +180,86 @@ def start_time_mode_config(display, rtc):
         rtc=rtc,
         encoder_pins=(19, 18, 20),
         led_pin=15,
-        header="Time Mode",
-        next_config={"id": "main_menu", "display_text": "Main Menu"}
+        header="Time Mode"
     )
 
 
 def start_radio_menu(display):
-    return Menu(
-        display=display,
-        encoder_pins=(19, 18, 20),
-        led_pin=15,
-        header="Radio Menu",
-        selectables=[
-            {"display_text": "radio on", "id": "some_radio_config"},
-            {"display_text": "Radio Off", "id": "some_radio_config"},
-            {"display_text": "Frequency scan", "id": "scan"}
-        ],
-        id="radio_menu"
-    )
+    context = context_queue.dequeue()
+    context.router_context["next_ui_id"] = "radio_menu"
+    context.ui_context.update({
+        "header": "Radio Menu",
+        "selectables": [
+            {"display_text": "Volume", "id": "set_volume"}
+        ]
+    })
+    context_queue.add_to_queue(context)
+    return Menu(display, encoder_pins=(19, 18, 20), led_pin=15, id="radio_menu")
 
 
 def start_main_menu(display):
-    return Menu(
-        display=display,
-        encoder_pins=(19, 18, 20),
-        led_pin=15,
-        header="Main Menu",
-        selectables=[
+    context = context_queue.dequeue()
+    context.router_context["next_ui_id"] = "main_menu"
+    context.ui_context.update({
+        "header": "Main Menu",
+        "selectables": [
             {"display_text": "Time", "id": "time_menu"},
             {"display_text": "Radio", "id": "radio_menu"}
-        ],
-        id="main_menu"
+        ]
+    })
+    context_queue.add_to_queue(context)
+    return Menu(display, encoder_pins=(19, 18, 20), led_pin=15, id="main_menu")
+
+
+def start_hour_config(display, rtc):
+    return TimeConfig(
+        display=display,
+        rtc=rtc,
+        encoder_pins=(19, 18, 20),
+        led_pin=15,
+    )
+
+
+def start_minute_config(display, rtc):
+    return TimeConfig(
+        display=display,
+        rtc=rtc,
+        encoder_pins=(19, 18, 20),
+        led_pin=15,
+    )
+
+
+def start_seconds_config(display, rtc):
+    return TimeConfig(
+        display=display,
+        rtc=rtc,
+        encoder_pins=(19, 18, 20),
+        led_pin=15,
     )
 
 
 menu_map = {
     "set_volume": start_volume_config,
-    "set_hour": start_hour_config,
-    "set_hour_alarm": start_alarm_hour_config,
-    "set_minute": start_minute_config,
-    "set_minute_alarm": start_alarm_minute_config,
-    "set_seconds": start_seconds_config,
-    "set_seconds_alarm": start_alarm_seconds_config,
+    "new_time": start_set_time,
+    "set_time": start_time_config,
+    "set_alarm": start_alarm_config,
+    "new_alarm": start_create_alarm,
     "alarm_menu": start_alarm_menu,
     "list_alarms": start_list_alarms,
-    "create_alarm": start_create_alarm,
     "time_menu": start_time_menu,
     "radio_menu": start_radio_menu,
     "main_menu": start_main_menu,
     "set_time_mode": start_time_mode_config,
-    "alarm_disable": start_alarm_disable_config
+    "alarm_disable": start_alarm_disable_config,
+    "delete_alarm": start_delete_alarm_config,
+    "snooze": start_snooze_config,
+}
+
+
+auxiliary_menu_map = {
+    "radio_power": start_volume_config,
+    "start_main_menu": start_main_menu,
+    "stop_monitoring": None,  # Special case, handled separately
+    "alarm_disable": start_alarm_disable_config,
+    "snooze": start_snooze_config,
 }

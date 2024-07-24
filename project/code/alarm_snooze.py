@@ -1,28 +1,29 @@
-from machine import Pin, Timer
-from display import CR_SPI_Display
-from encoder import RotaryEncoder
-import time
-import sys
-import uos
-from ui import UI
-from context_queue import context_queue
+from context_queue import context_queue, reporting_queue
 from context import Context
+from ui import UI
+from encoder import RotaryEncoder
+import sys
 
 
-class AlarmDisable(UI):
-    def __init__(self, display, rtc, encoder_pins, led_pin):
+class AlarmSnooze(UI):
+    def __init__(
+        self,
+        display,
+        rtc,
+        encoder_pins,
+        led_pin,
+    ):
         self.display = display
         self.rtc = rtc
-        self.encoder_pins = encoder_pins
-        self.led_pin = led_pin
-
+        
         # Load context and populate properties
         self.ui_context = self.load_context()
-        
-        # Default to "Disable Alarm" if not provided
-        self.header = self.ui_context.get("header", "Disable Alarm?")
+
+        self.header = self.ui_context.get("header", "Disable Snooze Alarm")
         self.min = self.ui_context.get("min", 0)
         self.max = self.ui_context.get("max", 1)
+        self.snooze = self.ui_context.get("snooze", False)
+
         self.current_value = self.min
         
         # Initialize the encoder
@@ -38,11 +39,14 @@ class AlarmDisable(UI):
             )
         except Exception as e:
             sys.print_exception(e)
-            print("ENCODER NOT CREATED FOR ALARM DISABLE")
+            print("ENCODER NOT CREATED FOR ALARM SNOOZE")
             raise
 
-        # Initialize other components and state as needed
         self.update_display()
+
+        # Initialize a snooze if required
+        if self.snooze:
+            self.trigger_snooze()
 
     def load_context(self):
         """
@@ -50,14 +54,33 @@ class AlarmDisable(UI):
         """
         context = context_queue.dequeue()
         if context:
-            print(f"alarm_disable,load_context,dequeue\n{context.router_context}\n{context.ui_context}\n{context_queue.size()}")
-        else:
-            print("alarm_disable,load_context,dequeue: No context available")
+            print(f"alarm_snooze,load_context,dequeue\n{context.router_context}\n{context.ui_context}\n{context_queue.size()}")
 
         if isinstance(context, Context):
             return context.ui_context
 
         return context if context else {}
+
+    def trigger_snooze(self):
+        snooze_minutes = 1  # minutes to snooze
+
+        # Turn off alarm sound activated by previous alarm triggering snooze
+        self.turn_off_alarm()
+        
+        # Delete any existing snooze files
+        self.rtc.delete_all_snooze_files()
+
+        # Create a new snooze alarm file and get the snooze time
+        snooze_id, snooze_time = self.rtc.new_snooze(snooze_minutes)
+        #print(f"HSHSHSHS: {snooze_time}")
+        msg = f"Snooze active until {snooze_time['hour']:02d}:{snooze_time['minute']:02d}:{snooze_time['second']:02d}"
+
+        # Queue up message "snooze active" in reporting queue with the snooze trigger time
+        reporting_queue.add_to_queue({
+            "job_id": "snooze_active",
+            "msg": msg,
+            "snooze_time": snooze_time
+        })
 
     def update_display(self):
         """
@@ -78,7 +101,8 @@ class AlarmDisable(UI):
             self.update_display()
 
     def select_action(self):
-        self.disable_alarm()
+        if self.current_value == 1:  # If "Yes" is selected
+            self.disable_alarm()
         self.build_context()
         return self.ui_context
 
@@ -102,20 +126,34 @@ class AlarmDisable(UI):
         return False
 
     def reset(self):
-        self.current_value = self.min
+        self.current_value = 0
         self.update_display()
 
     def stop(self):
-        if self.encoder:
-            self.encoder.pin_a.irq(handler=None)
-            self.encoder.pin_b.irq(handler=None)
-            self.encoder.button.disable_irq()
-        if self.display:
-            self.display.clear()
-
+        self.encoder.pin_a.irq(handler=None)
+        self.encoder.pin_b.irq(handler=None)
+        self.encoder.button.disable_irq()
+        
+    def turn_off_alarm(self):
+        self.rtc.alarm_off()
+        
     def disable_alarm(self):
         """
-        Disable the alarm in the RTC module.
+        Disable the snooze alarm in the RTC module.
         """
-        self.rtc.alarm_off()
+        # Should already be turned off
+        self.turn_off_alarm()
+        
+        # Remove any snooze files
+        self.rtc.delete_all_snooze_files()
+        
+        # Enqueue "snooze inactive" message
+        reporting_queue.add_to_queue({
+            "job_id": "snooze_disable",
+            "msg": None
+        })
         self.encoder.reset_counter()
+        
+        # Set alarm_active to False
+        self.rtc.alarm_active = False
+
