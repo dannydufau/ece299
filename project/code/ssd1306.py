@@ -2,6 +2,8 @@
 
 from micropython import const
 import framebuf
+import utime
+
 
 
 # register definitions

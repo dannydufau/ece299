@@ -4,6 +4,12 @@ from ui import UI
 from encoder import RotaryEncoder
 import sys
 
+from context_queue import context_queue, reporting_queue
+from context import Context
+from ui import UI
+from encoder import RotaryEncoder
+import sys
+
 
 class AlarmSnooze(UI):
     def __init__(
@@ -24,7 +30,7 @@ class AlarmSnooze(UI):
         self.max = self.ui_context.get("max", 1)
         self.snooze = self.ui_context.get("snooze", False)
 
-        self.current_value = self.min
+        self.current_value = 1  # Set to 1 to map to "Yes"
         
         # Initialize the encoder
         try:
@@ -35,7 +41,9 @@ class AlarmSnooze(UI):
                 led_pin=led_pin, 
                 rollover=True,
                 max=self.max,
-                min=self.min
+                min=self.min,
+                button_callback=self.button_release, # method called here on button click
+                on_release=True # tell button class to respond to release
             )
         except Exception as e:
             sys.print_exception(e)
@@ -84,25 +92,21 @@ class AlarmSnooze(UI):
 
     def update_display(self):
         """
-        Update the display on encoder changes
+        Update the display - but there aren't encoder changes.  Always display "Yes".
         """
         self.display.clear()
         self.display.update_text(self.header, 0, 0)
-        text_value = "Yes" if self.current_value else "No"
+        text_value = "Yes"  
         self.display.update_text(text_value, 0, 1)
 
     def poll_selection_change_and_update_display(self):
         """
         Detect if the encoder input has changed
         """
-        new_value, direction = self.encoder.get_counter()
-        if new_value != self.current_value:
-            self.current_value = new_value
-            self.update_display()
+        pass
 
-    def select_action(self):
-        if self.current_value == 1:  # If "Yes" is selected
-            self.disable_alarm()
+    def button_release(self):
+        self.disable_alarm()
         self.build_context()
         return self.ui_context
 
@@ -121,12 +125,11 @@ class AlarmSnooze(UI):
 
     def is_encoder_button_pressed(self):
         if self.encoder.get_button_state():
-            self.select_action()
             return True
         return False
 
     def reset(self):
-        self.current_value = 0
+        self.current_value = 1  # Always set to 1 for "Yes"
         self.update_display()
 
     def stop(self):

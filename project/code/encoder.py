@@ -22,6 +22,7 @@ class RotaryEncoder:
         pin_b,
         pin_switch,
         led_pin,
+        on_release=False, # trigger button callback on release -> True
         rollover=True,
         max=10,
         min=1,
@@ -42,6 +43,7 @@ class RotaryEncoder:
             rollover (bool): If true the dial will rollover back to zero if max limit is
                 reached rather than counting indefinitely.
         """
+        # Setup pins
         self.pin_a = Pin(pin_a, mode=Pin.IN)
         self.pin_b = Pin(pin_b, mode=Pin.IN)
         self.led = LED(led_pin)
@@ -50,7 +52,7 @@ class RotaryEncoder:
         self.max = max
         self.min = min
         #self.counter = 0
-        self.counter = 1
+        self.counter = self.min
         self.direction = ""
         self.state = (self.pin_a.value() * 2) + self.pin_b.value()
         self.last_state = self.state
@@ -60,7 +62,8 @@ class RotaryEncoder:
 
         self.encoder_triggered = False
 
-        self.encoder_timer = Timer(-1)  # Timer for encoder debounce
+        # Timer for encoder debounce
+        self.encoder_timer = Timer(-1)
         self.debounce_delay_ms = 2
 
         self.pin_a.irq(trigger=Pin.IRQ_RISING | Pin.IRQ_FALLING, handler=self.encoder_irq)
@@ -76,12 +79,17 @@ class RotaryEncoder:
             callback=self.button_callback,
             identity=self.identity,
             debounce_time_ms=10,
+            on_release=on_release # class property?
         )
 
     def get_counter(self):
         # TODO: check if counter is negative
         return (self.counter, self.direction)
-    
+
+    def set_counter(self, value):
+        if self.min <= value <= self.max:
+            self.counter = value
+            
     def get_button_state(self):
         return self.button.button.value() == 0  # ACTIVE LOW
 
@@ -190,10 +198,10 @@ class RotaryEncoder:
         if callable(self.programmed_callback):
             self.programmed_callback()
         #print(f"encoder button callback: {identity}")
-    
+
     def reset_counter(self):
-        self.counter = 0
-        self.direction = 0
+        self.counter = self.min
+        self.direction = ""
         #self.update_callback(self.counter, self.direction)
 
 
@@ -207,3 +215,4 @@ if __name__ == "__main__":
     while True:
         #encoder.toggle_led()
         utime.sleep(1)
+

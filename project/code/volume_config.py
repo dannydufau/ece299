@@ -1,39 +1,34 @@
-from machine import Pin, Timer
-from display import CR_SPI_Display
-from encoder import RotaryEncoder
-import time
-import sys
-import uos
 from ui import UI
+from encoder import RotaryEncoder
 from context_queue import context_queue
 from context import Context
+#import sys
 
 
-class AlarmDisable(UI):
-    def __init__(self, display, rtc, encoder_pins, led_pin):
+class VolumeConfig(UI):
+    def __init__(self, display, radio_control, encoder_pins, led_pin, id):
         self.display = display
-        self.rtc = rtc
-        self.encoder_pins = encoder_pins
-        self.led_pin = led_pin
+        self.radio_control = radio_control
+        self.id = id
 
-        # Load context and populate properties
+        # Load context
         self.ui_context = self.load_context()
-        
-        # Default to "Disable Alarm" if not provided
-        self.header = self.ui_context.get("header", "Turn off Alarm?")
+        self.header = self.ui_context.get("header")
         self.min = self.ui_context.get("min", 0)
-        self.max = self.ui_context.get("max", 1)
-        
-        # hardcode this for now
-        self.current_value = 1 #self.min
-        
-        # Initialize the encoder
+        self.max = self.ui_context.get("max", 15)  # Default range for volume
+        self.current_value = self.min
+
+        self.selected_index = None
+        self.selected_item = None
+
+        print(f"IN VOLUME CONFIG: {self.header}")
+
         try:
             self.encoder = RotaryEncoder(
-                pin_a=encoder_pins[0], 
-                pin_b=encoder_pins[1], 
-                pin_switch=encoder_pins[2], 
-                led_pin=led_pin, 
+                pin_a=encoder_pins[0],
+                pin_b=encoder_pins[1],
+                pin_switch=encoder_pins[2],
+                led_pin=led_pin,
                 rollover=True,
                 max=self.max,
                 min=self.min,
@@ -41,11 +36,10 @@ class AlarmDisable(UI):
                 on_release=True # tell button class to respond to release
             )
         except Exception as e:
-            sys.print_exception(e)
-            print("ENCODER NOT CREATED FOR ALARM DISABLE")
+            #sys.print_exception(e)
+            print("ENCODER NOT CREATED FOR VOLUME CONFIG")
             raise
 
-        # Initialize other components and state as needed
         self.update_display()
 
     def load_context(self):
@@ -53,10 +47,7 @@ class AlarmDisable(UI):
         Dequeue context from the queue and return the ui_context.
         """
         context = context_queue.dequeue()
-        if context:
-            print(f"alarm_disable,load_context,dequeue\n{context.router_context}\n{context.ui_context}\n{context_queue.size()}")
-        else:
-            print("alarm_disable,load_context,dequeue: No context available")
+        print(f"volume_config,load_context,dequeue\n{context.router_context}\n{context.ui_context}\n{context_queue.size()}")
 
         if isinstance(context, Context):
             return context.ui_context
@@ -64,29 +55,23 @@ class AlarmDisable(UI):
         return context if context else {}
 
     def update_display(self):
-        """
-        Update the display on encoder changes
-        """
         self.display.clear()
         self.display.update_text(self.header, 0, 0)
-        #text_value = "Yes" if self.current_value else "No"
-        text_value = "Yes"
-        self.display.update_text(text_value, 0, 1)
+        self.display.update_text(str(self.current_value), 0, 1)
 
     def poll_selection_change_and_update_display(self):
-        """
-        Detect if the encoder input has changed
-        """
-        pass
+        new_value, direction = self.encoder.get_counter()
+        if new_value != self.current_value:
+            self.current_value = new_value
+            self.update_display()
 
     def button_release(self):
-        self.disable_alarm()
+        self.radio_control.set_volume(self.current_value)
         self.build_context()
         return self.ui_context
 
     def build_context(self):
         next_ui_id = "main_menu"
-        
         ui_context = {
             "header": "Main Menu",
             "selectables": [
@@ -102,10 +87,6 @@ class AlarmDisable(UI):
             return True
         return False
 
-    def reset(self):
-        self.current_value = 1 #self.min
-        self.update_display()
-
     def stop(self):
         if self.encoder:
             self.encoder.pin_a.irq(handler=None)
@@ -113,10 +94,3 @@ class AlarmDisable(UI):
             self.encoder.button.disable_irq()
         if self.display:
             self.display.clear()
-
-    def disable_alarm(self):
-        """
-        Disable the alarm in the RTC module.
-        """
-        self.rtc.alarm_off()
-        self.encoder.reset_counter()

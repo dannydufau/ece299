@@ -34,12 +34,14 @@ class TimeConfig(UI):
                 led_pin=led_pin, 
                 rollover=True,
                 max=self.max,
-                min=self.min
+                min=self.min,
+                button_callback=self.button_release, # method called here on button click
+                on_release=True # tell button class to respond to release
             )
+
         except Exception as e:
             sys.print_exception(e)
             print("ENCODER NOT CREATED FOR TIME CONFIG")
-            raise
 
         # Initialize other components and state as needed
         self.update_display()
@@ -49,7 +51,7 @@ class TimeConfig(UI):
         Dequeue context from the queue and return the ui_context.
         """
         context = context_queue.dequeue()
-        print(f"time_config,load_context,dequeue\n{context.router_context}\n{context.ui_context}\n{context_queue.size()}")
+        #print(f"time_config,load_context,dequeue\n{context.router_context}\n{context.ui_context}\n{context_queue.size()}")
 
         if isinstance(context, Context):
             return context.ui_context
@@ -73,12 +75,10 @@ class TimeConfig(UI):
             self.current_value = new_value
             self.update_display()
 
-    def select_action(self):
-        self.write_time_to_rtc()
-        self.build_context()
-        return self.ui_context
-
     def build_context(self):
+        #print(f"time_config.py,load_context,dequeue\n{context.router_context}\n{context.ui_context}\n{context_queue.size()}")
+        print(f"time_config.py, queue_size: {context_queue.size()}")
+
         next_header = None
         next_ui_id = "set_time"
         min = None
@@ -103,9 +103,14 @@ class TimeConfig(UI):
         router_context = {"next_ui_id": next_ui_id}
         context_queue.add_to_queue(Context(router_context=router_context, ui_context=ui_context))
 
+    def button_release(self):
+        self.write_time_to_rtc()
+        self.build_context()
+        return self.ui_context
+
     def is_encoder_button_pressed(self):
+        # being replaced by button_release
         if self.encoder.get_button_state():
-            self.select_action()
             return True
         return False
 
@@ -120,39 +125,54 @@ class TimeConfig(UI):
             self.encoder.button.disable_irq()
         if self.display:
             self.display.clear()
-
+    
     def write_time_to_rtc(self):
         """
         Description: Sets the time. Writes the time metric stored in current_value to
         the RTC module.
         """
-        # Read the current datetime the module is configured to
-        current_datetime = self.rtc.get_formatted_datetime_from_module()
-        
-        new_hour = int(current_datetime["hour"])
-        new_minute = int(current_datetime["minute"])
-        new_second = int(current_datetime["second"])
-        new_weekday = self.rtc.weekday_map[current_datetime["weekday"].lower()]
-        
-        # Determine which metric to update depending on the header
-        if self.header == "hour":
-            new_hour = int(self.current_value)
-        elif self.header == "minute":
-            new_minute = int(self.current_value)
-        elif self.header == "second":
-            new_second = int(self.current_value)
-        
-        # Update the RTC module
         try:
-            self.rtc.rtc.datetime((int(current_datetime["year"]),
-                                   int(current_datetime["month"]),
-                                   int(current_datetime["day"]),
-                                   new_weekday,
-                                   new_hour,
-                                   new_minute,
-                                   new_second))
+            # TODO: USE get_formatted
+            print(f"header: {self.header}")
+            current_datetime = self.rtc.get_formatted_datetime_from_module()
+            current_datetime = self.rtc.rtc.datetime()
+            print(f"Before: current_datetime: {current_datetime}")
+            #current_datetime = self.rtc.rtc.datetime()
+            
+            #new_hour = int(current_datetime["hour"])
+            #new_minute = int(current_datetime["minute"])
+            #new_second = int(current_datetime["second"])
+            #new_weekday = self.rtc.weekday_map[current_datetime["weekday"].lower()]
+            new_hour = current_datetime[4]
+            new_minute = current_datetime[5]
+            new_second = current_datetime[6]
+            new_weekday = current_datetime[3]
+            new_year = current_datetime[0]
+            new_month = current_datetime[1]
+            new_day = current_datetime[2]
+            
+            # Determine which metric to update depending on the header
+            if self.header == "hour":
+                new_hour = int(self.current_value)
+            elif self.header == "minute":
+                new_minute = int(self.current_value)
+            elif self.header == "second":
+                new_second = int(self.current_value)
+        
+            # Update the RTC module
+            self.rtc.set_datetime(new_year,
+                                  new_month,
+                                  new_day,
+                                  new_weekday,
+                                  new_hour,
+                                  new_minute,
+                                  new_second)
+
+            current_datetime = self.rtc.get_formatted_datetime_from_module()
+            print(f"after formatted: {current_datetime}")
+            
         except Exception as e:
-            print(f"Failed setting the date and time directly.\n{e}")
+            print(f"TimeConfig.write_time_to_rtc Failed setting the date and time directly.\n{e}")
 
         # Reset the encoder counter after writing the time
         self.encoder.reset_counter()

@@ -27,7 +27,9 @@ class TimeMode(UI):
             led_pin=led_pin,
             rollover=True,
             max=1,
-            min=0
+            min=0,
+            button_callback=self.button_release, # method called here on button click
+            on_release=True # tell button class to respond to release
         )
 
     def load_context(self):
@@ -70,11 +72,11 @@ class TimeMode(UI):
         self.encoder.pin_b.irq(handler=None)
         self.encoder.button.disable_irq()
 
-    def select_action(self):
+    def button_release(self):
         # Reset the encoder counter
         self.encoder.reset_counter()
         # Explicitly call update display
-        self.update_display()
+        #self.update_display()
         self.set_time_mode()
         self.build_context()
 

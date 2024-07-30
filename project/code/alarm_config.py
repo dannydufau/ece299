@@ -34,7 +34,9 @@ class AlarmConfig(UI):
                 led_pin=led_pin, 
                 rollover=True,
                 max=self.max,
-                min=self.min
+                min=self.min,
+                button_callback=self.button_release, # method called here on button click
+                on_release=True # tell button class to respond to release
             )
         except Exception as e:
             sys.print_exception(e)
@@ -58,6 +60,7 @@ class AlarmConfig(UI):
 
     def save_alarm_time(self):
         prefix="alarm_"
+        print(f"EXISTING ALARM: {self.alarm_id}")
         existing_alarm_time = self.rtc.load_time(self.alarm_id, prefix) if self.alarm_id else None
         print(f"existing alarm: {existing_alarm_time}\n{self.alarm_id}")
         alarm_time = {
@@ -73,11 +76,16 @@ class AlarmConfig(UI):
             alarm_time['second'] = self.current_value
         
         if existing_alarm_time:
-            self.rtc.save_alarm_time(self.alarm_id, alarm_time, prefix)
+            #self.rtc.save_alarm_time(self.alarm_id, alarm_time, prefix)
+            self.rtc.save_time_to_file(self.alarm_id, alarm_time, prefix)
+
         else:
-            self.alarm_id = self.rtc.new_alarm(alarm_time)
-        
-        print(f"Alarm time saved: {alarm_time}")
+            # new alarm
+            #self.alarm_id = self.rtc.new_alarm(alarm_time)
+            self.alarm_id = self.rtc.new_id()
+            # still use save_alarm_time?
+            self.rtc.save_time_to_file(self.alarm_id, alarm_time, prefix)
+        print(f"Alarm time saved: {alarm_time}, alarm_id: {self.alarm_id}")
 
     def update_display(self):
         self.display.clear()
@@ -91,7 +99,7 @@ class AlarmConfig(UI):
             self.current_value = new_value
             self.update_display()
 
-    def select_action(self):
+    def button_release(self):
         self.save_alarm_time()
         self.build_context()
         return self.ui_context
@@ -120,11 +128,12 @@ class AlarmConfig(UI):
             "alarm_id": self.alarm_id
         }
         router_context = {"next_ui_id": next_ui_id}
+        print(f"alarm_context built, {ui_context}")
         context_queue.add_to_queue(Context(router_context=router_context, ui_context=ui_context))
 
     def is_encoder_button_pressed(self):
+        # being replaced by button_release
         if self.encoder.get_button_state():
-            self.select_action()
             return True
         return False
 

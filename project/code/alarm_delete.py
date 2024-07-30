@@ -44,9 +44,11 @@ class AlarmDelete(UI):
             led_pin=led_pin, 
             rollover=True, 
             max=max, 
-            min=min
+            min=min,
+            button_callback=self.button_release, # method called here on button click
+            on_release=True # tell button class to respond to release
         )
-        print("IN DELETE")
+        #print("IN DELETE")
 
     def load_context(self):
         """
@@ -92,21 +94,24 @@ class AlarmDelete(UI):
         router_context = {"next_ui_id": next_ui_id}
         context_queue.add_to_queue(Context(router_context=router_context, ui_context=ui_context))
                     
-    def select_action(self):
+    #def select_action(self):
+    def button_release(self):
         if self.current_value == 0:
             print("should next config should be main")
         else:
-            self.delete_alarm()
+            #self.delete_alarm()
+            print(f"delete_alarm: {self.alarm_id}")
+            self.rtc.delete_alarm(self.alarm_id)
         self.build_context()
         
         # Do we need these next two lines?
         self.encoder.reset_counter()
-        self.update_display()
+        #self.update_display() # max recursion
+
         return self.ui_context
 
     def is_encoder_button_pressed(self):
         if self.encoder.get_button_state():
-            self.select_action()
             return True
         return False
 
@@ -119,9 +124,9 @@ class AlarmDelete(UI):
         self.encoder.pin_b.irq(handler=None)
         self.encoder.button.disable_irq()
 
-    def delete_alarm(self):
+    def delete_alarmNOTUSING(self):
         """
         Delete the alarm in the RTC module.
         """
+        print(f"delete_alarm: {self.alarm_id}")
         self.rtc.delete_alarm(self.alarm_id)
-        self.encoder.reset_counter()

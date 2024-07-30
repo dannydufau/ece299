@@ -23,7 +23,10 @@ class UI:
     def poll_selection_change_and_update_display(self):
         raise NotImplementedError
 
-    def select_action(self):
+    def select_actionNOTUSING(self):
+        raise NotImplementedError
+
+    def button_release(self):
         raise NotImplementedError
 
     def is_encoder_button_pressed(self):
@@ -36,3 +39,4 @@ class UI:
             self.encoder.button.disable_irq()
         if self.display:
             self.display.clear()
+

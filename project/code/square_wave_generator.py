@@ -1,6 +1,7 @@
 from machine import Pin, PWM
 import time
 
+
 class SquareWaveGenerator:
     def __init__(self, pin, frequency):
         self.pin = Pin(pin)

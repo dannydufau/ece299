@@ -1,6 +1,8 @@
 from ssd1306 import SSD1306_SPI  # this is the driver library and the corresponding class
 import framebuf  # this is another library for the display. 
 from machine import Pin, SPI
+import utime
+
 
 SCREEN_WIDTH = 128
 SCREEN_HEIGHT = 64
@@ -86,17 +88,22 @@ class CR_SPI_Display:
         self.oled.fill(0)
         self.oled.show()
 
-    def _clear_row(self, row):
+    def _clear_row(self, row, update_display=True):
         """
         Description: convenience method to clear an area that
         is letter height.
         Args:
             row (int): specific row to clear
+            update_display (bool): whether to update the display after clearing the row
         """
         y = row * self.char_height_px
-        self.oled.fill_rect(0, y, self.oled.width, 10, 0)
+        self.oled.fill_rect(0, y, self.oled.width, self.char_height_px, 0)
+        # prevent multiple recursion error
+        if update_display:
+            self.oled.show()
         
-    def _update_row(self, text, column, row, color=1, tab=True):
+
+    def _update_row(self, text, column, row, color=1, tab=True, update_display=True):
         """
         Render the text at the specified location
         Args:
@@ -104,11 +111,14 @@ class CR_SPI_Display:
             column (int):
             row (int):
             color (int): black 0, white 1
-            tab (bool): adds space to accomodate cursor
+            tab (bool): adds space to accommodate cursor
+            update_display (bool): whether to update the display after updating the row
         """
         x = column * self.char_width_px + 2
         y = row * self.char_height_px
         self.oled.text(text, x, y, color)
+        if update_display:
+            self.oled.show()
         
     def update_text(self, text, column, row, color=1):
         """
@@ -136,10 +146,10 @@ class CR_SPI_Display:
         elif row >= self.max_rows:
             row = self.max_rows - 1
         
-        # Clear the specified row
-        self._clear_row(row)
-
-        self._update_row(text, column, row, color)
+        # Clear the specified row without updating the display immediately
+        self._clear_row(row, update_display=False)
+        # Update the row without updating the display immediately
+        self._update_row(text, column, row, color, update_display=False)
 
         # Update the display
         self.oled.show()
