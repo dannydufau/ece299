@@ -2,10 +2,11 @@
 
 TIMEZONE_OFFSETS = {
     "UTC": 0,
-    "CST": -6, # Mexico City
-    "CDT": -5, # Mexico City Daylight Time
+    "CST": -6,  # Mexico City
+    "CDT": -5,  # Mexico City Daylight Time
     "PST": -8,
 }
+
 
 def get_timezone_offset(timezone):
     """

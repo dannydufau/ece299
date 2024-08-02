@@ -2,7 +2,8 @@ from ui import UI
 from encoder import RotaryEncoder
 from context_queue import context_queue
 from context import Context
-#import sys
+
+# import sys
 
 
 class VolumeConfig(UI):
@@ -32,11 +33,11 @@ class VolumeConfig(UI):
                 rollover=True,
                 max=self.max,
                 min=self.min,
-                button_callback=self.button_release, # method called here on button click
-                on_release=True # tell button class to respond to release
+                button_callback=self.button_release,  # method called here on button click
+                on_release=True,  # tell button class to respond to release
             )
         except Exception as e:
-            #sys.print_exception(e)
+            # sys.print_exception(e)
             print("ENCODER NOT CREATED FOR VOLUME CONFIG")
             raise
 
@@ -47,7 +48,9 @@ class VolumeConfig(UI):
         Dequeue context from the queue and return the ui_context.
         """
         context = context_queue.dequeue()
-        print(f"volume_config,load_context,dequeue\n{context.router_context}\n{context.ui_context}\n{context_queue.size()}")
+        print(
+            f"volume_config,load_context,dequeue\n{context.router_context}\n{context.ui_context}\n{context_queue.size()}"
+        )
 
         if isinstance(context, Context):
             return context.ui_context
@@ -76,11 +79,13 @@ class VolumeConfig(UI):
             "header": "Main Menu",
             "selectables": [
                 {"display_text": "Time", "id": "time_menu"},
-                {"display_text": "Radio", "id": "radio_menu"}
-            ]
+                {"display_text": "Radio", "id": "radio_menu"},
+            ],
         }
         router_context = {"next_ui_id": next_ui_id}
-        context_queue.add_to_queue(Context(router_context=router_context, ui_context=ui_context))
+        context_queue.add_to_queue(
+            Context(router_context=router_context, ui_context=ui_context)
+        )
 
     def is_encoder_button_pressed(self):
         if self.encoder.get_button_state():

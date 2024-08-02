@@ -7,11 +7,11 @@ from context import Context
 class DateConfig(UI):
     def __init__(self, display, rtc, encoder_pins, led_pin, id):
         self.display = display
-        #self.radio_control = radio_control
+        # self.radio_control = radio_control
         self.id = id
         self.rtc = rtc
-        #self.current_frequency = self.radio_control.get_frequency()  # Get current frequency
-        
+        # self.current_frequency = self.radio_control.get_frequency()  # Get current frequency
+
         # Load context
         self.ui_context = self.load_context()
         self.header = self.ui_context.get("header")
@@ -39,8 +39,8 @@ class DateConfig(UI):
                 rollover=True,
                 max=self.max,
                 min=self.min,
-                button_callback=self.button_release, # method called here on button click
-                on_release=True # tell button class to respond to release
+                button_callback=self.button_release,  # method called here on button click
+                on_release=True,  # tell button class to respond to release
             )
 
         except Exception as e:
@@ -54,7 +54,9 @@ class DateConfig(UI):
         Dequeue context from the queue and return the ui_context.
         """
         context = context_queue.dequeue()
-        print(f"frequency_config,load_context,dequeue\n{context.router_context}\n{context.ui_context}\n{context_queue.size()}")
+        print(
+            f"frequency_config,load_context,dequeue\n{context.router_context}\n{context.ui_context}\n{context_queue.size()}"
+        )
 
         if isinstance(context, Context):
             return context.ui_context
@@ -76,7 +78,7 @@ class DateConfig(UI):
         self.write_date_to_rtc()
         self.build_context()
         return self.ui_context
-    
+
     def write_date_to_rtc(self):
         """
         Description: Sets the date. Writes the date metric stored in current_value to
@@ -91,7 +93,7 @@ class DateConfig(UI):
             new_minute = current_datetime[5]
             new_second = current_datetime[6]
             new_weekday = current_datetime[3]
-            
+
             # Determine which metric to update depending on the header
             if self.header == "year":
                 new_year = int(self.current_value)
@@ -99,25 +101,29 @@ class DateConfig(UI):
                 new_month = int(self.current_value)
             elif self.header == "day":
                 new_day = int(self.current_value)
-        
+
             # Update the RTC module
-            self.rtc.set_datetime(new_year,
-                                  new_month,
-                                  new_day,
-                                  new_weekday,
-                                  new_hour,
-                                  new_minute,
-                                  new_second)
+            self.rtc.set_datetime(
+                new_year,
+                new_month,
+                new_day,
+                new_weekday,
+                new_hour,
+                new_minute,
+                new_second,
+            )
 
             current_datetime = self.rtc.get_formatted_datetime_from_module()
             print(f"after formatted: {current_datetime}")
-            
+
         except Exception as e:
-            print(f"DateConfig.write_date_to_rtc Failed setting the date and time directly.\n{e}")
+            print(
+                f"DateConfig.write_date_to_rtc Failed setting the date and time directly.\n{e}"
+            )
 
         # Reset the encoder counter after writing the date
         self.encoder.reset_counter()
-    
+
     def button_releaseNOPE(self):
         if self.header == "integer_part":
             self.current_frequency = float(f"{self.current_value}.0")
@@ -128,7 +134,7 @@ class DateConfig(UI):
             self.radio_control.set_frequency(new_frequency)
             self.build_context("Main Menu", "main_menu", None, None)
         print(f"current_frequency: {self.radio_control.get_frequency()}")
-            
+
         return self.ui_context
 
     def build_context(self):
@@ -147,14 +153,12 @@ class DateConfig(UI):
         elif self.header == "day":
             next_ui_id = "main_menu"
             next_header = ""
-        
-        ui_context = {
-            "header": next_header,
-            "min": min,
-            "max": max
-        }
+
+        ui_context = {"header": next_header, "min": min, "max": max}
         router_context = {"next_ui_id": next_ui_id}
-        context_queue.add_to_queue(Context(router_context=router_context, ui_context=ui_context))
+        context_queue.add_to_queue(
+            Context(router_context=router_context, ui_context=ui_context)
+        )
 
     def is_encoder_button_pressed(self):
         if self.encoder.get_button_state():
@@ -168,4 +172,3 @@ class DateConfig(UI):
             self.encoder.button.disable_irq()
         if self.display:
             self.display.clear()
-

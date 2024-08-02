@@ -16,7 +16,7 @@ class AlarmConfig(UI):
         # Load context and populate properties
         self.ui_context = self.load_context()
         self.alarm_id = self.ui_context.get("alarm_id")
-        
+
         # Default to "hour" if not provided
         self.header = self.ui_context.get("header", "hour")
 
@@ -24,19 +24,19 @@ class AlarmConfig(UI):
         self.min = self.ui_context.get("min", 0)
         self.max = self.ui_context.get("max", 24)
         self.current_value = self.min
-        
+
         # Initialize the encoder
         try:
             self.encoder = RotaryEncoder(
-                pin_a=encoder_pins[0], 
-                pin_b=encoder_pins[1], 
-                pin_switch=encoder_pins[2], 
-                led_pin=led_pin, 
+                pin_a=encoder_pins[0],
+                pin_b=encoder_pins[1],
+                pin_switch=encoder_pins[2],
+                led_pin=led_pin,
                 rollover=True,
                 max=self.max,
                 min=self.min,
-                button_callback=self.button_release, # method called here on button click
-                on_release=True # tell button class to respond to release
+                button_callback=self.button_release,  # method called here on button click
+                on_release=True,  # tell button class to respond to release
             )
         except Exception as e:
             sys.print_exception(e)
@@ -51,7 +51,9 @@ class AlarmConfig(UI):
         Dequeue context from the queue and return the ui_context.
         """
         context = context_queue.dequeue()
-        print(f"alarm_config,load_context,dequeue\n{context.router_context}\n{context.ui_context}\n{context_queue.size()}")
+        print(
+            f"alarm_config,load_context,dequeue\n{context.router_context}\n{context.ui_context}\n{context_queue.size()}"
+        )
 
         if isinstance(context, Context):
             return context.ui_context
@@ -59,29 +61,31 @@ class AlarmConfig(UI):
         return context if context else {}
 
     def save_alarm_time(self):
-        prefix="alarm_"
+        prefix = "alarm_"
         print(f"EXISTING ALARM: {self.alarm_id}")
-        existing_alarm_time = self.rtc.load_time(self.alarm_id, prefix) if self.alarm_id else None
+        existing_alarm_time = (
+            self.rtc.load_time(self.alarm_id, prefix) if self.alarm_id else None
+        )
         print(f"existing alarm: {existing_alarm_time}\n{self.alarm_id}")
         alarm_time = {
-            'hour': existing_alarm_time['hour'] if existing_alarm_time else 0,
-            'minute': existing_alarm_time['minute'] if existing_alarm_time else 0,
-            'second': existing_alarm_time['second'] if existing_alarm_time else 0,
+            "hour": existing_alarm_time["hour"] if existing_alarm_time else 0,
+            "minute": existing_alarm_time["minute"] if existing_alarm_time else 0,
+            "second": existing_alarm_time["second"] if existing_alarm_time else 0,
         }
         if self.header == "hour":
-            alarm_time['hour'] = self.current_value
+            alarm_time["hour"] = self.current_value
         elif self.header == "minute":
-            alarm_time['minute'] = self.current_value
+            alarm_time["minute"] = self.current_value
         elif self.header == "second":
-            alarm_time['second'] = self.current_value
-        
+            alarm_time["second"] = self.current_value
+
         if existing_alarm_time:
-            #self.rtc.save_alarm_time(self.alarm_id, alarm_time, prefix)
+            # self.rtc.save_alarm_time(self.alarm_id, alarm_time, prefix)
             self.rtc.save_time_to_file(self.alarm_id, alarm_time, prefix)
 
         else:
             # new alarm
-            #self.alarm_id = self.rtc.new_alarm(alarm_time)
+            # self.alarm_id = self.rtc.new_alarm(alarm_time)
             self.alarm_id = self.rtc.new_id()
             # still use save_alarm_time?
             self.rtc.save_time_to_file(self.alarm_id, alarm_time, prefix)
@@ -89,7 +93,7 @@ class AlarmConfig(UI):
 
     def update_display(self):
         self.display.clear()
-        #self.display.update_text(self.header.capitalize(), 0, 0)
+        # self.display.update_text(self.header.capitalize(), 0, 0)
         self.display.update_text(self.header, 0, 0)
         self.display.update_text(str(self.current_value), 0, 1)
 
@@ -120,16 +124,18 @@ class AlarmConfig(UI):
         elif self.header == "second":
             next_ui_id = "main_menu"
             next_header = ""
-        
+
         ui_context = {
             "header": next_header,
             "min": min,
             "max": max,
-            "alarm_id": self.alarm_id
+            "alarm_id": self.alarm_id,
         }
         router_context = {"next_ui_id": next_ui_id}
         print(f"alarm_context built, {ui_context}")
-        context_queue.add_to_queue(Context(router_context=router_context, ui_context=ui_context))
+        context_queue.add_to_queue(
+            Context(router_context=router_context, ui_context=ui_context)
+        )
 
     def is_encoder_button_pressed(self):
         # being replaced by button_release
@@ -159,8 +165,5 @@ class AlarmConfig(UI):
             snooze_id = self.rtc.find_alarm_by_time(snooze_time)
             if snooze_id:
                 self.rtc.delete_alarm(snooze_id, snooze=True)
-        self.reporting_queue.add_to_queue({
-            "job_id": "snooze_disable",
-            "msg": None
-        })
+        self.reporting_queue.add_to_queue({"job_id": "snooze_disable", "msg": None})
         self.encoder.reset_counter()

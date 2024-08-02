@@ -18,10 +18,11 @@ def create_navigation_display():
         spi_dev=SPI_DEVICE,
         spi_sck=2,
         spi_sda=3,
-        spi_cs=5, # 5 on bb, 6 on pcb
+        spi_cs=5,  # 5 on bb, 6 on pcb
         res=4,
-        dc=6 #6 on bb, 5 on pcb
+        dc=6,  # 6 on bb, 5 on pcb
     )
+
 
 def create_report_display():
     return CR_SPI_Display_Second(
@@ -32,8 +33,9 @@ def create_report_display():
         spi_sda=11,
         spi_cs=13,
         res=14,
-        dc=12
+        dc=12,
     )
+
 
 if __name__ == "__main__":
     # Instantiate the displays

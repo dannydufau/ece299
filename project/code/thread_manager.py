@@ -12,7 +12,14 @@ class ThreadManager:
         thread_id = len(self.threads)
         self.lock.acquire()
         try:
-            self.threads.append((thread_id, _thread.start_new_thread(self.thread_wrapper, (target, thread_id) + args)))
+            self.threads.append(
+                (
+                    thread_id,
+                    _thread.start_new_thread(
+                        self.thread_wrapper, (target, thread_id) + args
+                    ),
+                )
+            )
         finally:
             self.lock.release()
         return thread_id

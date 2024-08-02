@@ -16,33 +16,40 @@ from context import Context
 def get_list_from_range(low, high):
     return [str(i) for i in range(low, high)]
 
+
 def start_date_menu(display):
     context = context_queue.dequeue()
     context.router_context["next_ui_id"] = "date_menu"
-    context.ui_context.update({
-        "header": "Date Menu",
-        "selectables": [
-            {"display_text": "Set Date", "id": "new_date"},
-            {"display_text": "Set Timezone", "id": "set_timezone"},
-        ]
-    })
+    context.ui_context.update(
+        {
+            "header": "Date Menu",
+            "selectables": [
+                {"display_text": "Set Date", "id": "new_date"},
+                {"display_text": "Set Timezone", "id": "set_timezone"},
+            ],
+        }
+    )
     context_queue.add_to_queue(context)
     return Menu(display, encoder_pins=(19, 18, 20), led_pin=15, id="date_menu")
+
 
 def start_time_menu(display):
     context = context_queue.dequeue()
     context.router_context["next_ui_id"] = "time_menu"
-    context.ui_context.update({
-        "header": "Time Menu",
-        "selectables": [
-            {"display_text": "Set Time", "id": "new_time"},
-            {"display_text": "Alarm Menu", "id": "alarm_menu"},
-            {"display_text": "Set Time Mode", "id": "set_time_mode"},
-            #{"display_text": "Set Timezone", "id": "set_timezone"},
-        ]
-    })
+    context.ui_context.update(
+        {
+            "header": "Time Menu",
+            "selectables": [
+                {"display_text": "Set Time", "id": "new_time"},
+                {"display_text": "Alarm Menu", "id": "alarm_menu"},
+                {"display_text": "Set Time Mode", "id": "set_time_mode"},
+                # {"display_text": "Set Timezone", "id": "set_timezone"},
+            ],
+        }
+    )
     context_queue.add_to_queue(context)
     return Menu(display, encoder_pins=(19, 18, 20), led_pin=15, id="time_menu")
+
 
 def start_alarm_disable_config(display, rtc):
     return AlarmDisable(
@@ -63,22 +70,17 @@ def start_snooze_config(display, rtc):
                 "header": "Main Menu",
                 "selectables": [
                     {"display_text": "Time", "id": "time_menu"},
-                    {"display_text": "Radio", "id": "radio_menu"}
-                ]
-            }
+                    {"display_text": "Radio", "id": "radio_menu"},
+                ],
+            },
         )
         context_queue.add_to_queue(context)
         return start_main_menu(display)
-    
+
     # Otherwise return the snooze alarm config
     context = Context(
         router_context={"next_ui_id": "main_menu"},
-        ui_context={
-            "header": "Disable Snooze?",
-            "min": 0,
-            "max": 1,
-            "snooze": True
-        }
+        ui_context={"header": "Disable Snooze?", "min": 0, "max": 1, "snooze": True},
     )
     context_queue.add_to_queue(context)
     return AlarmSnooze(
@@ -96,8 +98,8 @@ def start_volume_config(display, radio_control):
         ui_context={
             "header": "Volume Setting",
             "min": 0,
-            "max": 15  # Adjusted the range for volume settings (0-15)
-        }
+            "max": 15,  # Adjusted the range for volume settings (0-15)
+        },
     )
     context_queue.add_to_queue(context)
 
@@ -106,7 +108,7 @@ def start_volume_config(display, radio_control):
         radio_control=radio_control,
         encoder_pins=(19, 18, 20),
         led_pin=15,
-        id="set_volume"
+        id="set_volume",
     )
 
 
@@ -118,17 +120,14 @@ def start_list_alarms(display, rtc):
         {
             "display_text": f"{alarm[1]['hour']:02d}:{alarm[1]['minute']:02d}:{alarm[1]['second']:02d}",
             "id": "delete_alarm",
-            "context": {"alarm_id": alarm[0]}
+            "context": {"alarm_id": alarm[0]},
         }
         for alarm in alarms
     ] or [{"display_text": "No alarms set", "id": "main_menu"}]
 
     context = Context(
         router_context={"next_ui_id": "list_alarms"},
-        ui_context={
-            "header": "Alarm Delete",
-            "selectables": selectables
-        }
+        ui_context={"header": "Alarm Delete", "selectables": selectables},
     )
 
     context_queue.add_to_queue(context)
@@ -141,7 +140,7 @@ def start_delete_alarm_config(display, rtc, alarm_id):
         rtc=rtc,
         encoder_pins=(19, 18, 20),
         led_pin=15,
-        alarm_id=alarm_id
+        alarm_id=alarm_id,
     )
 
 
@@ -153,16 +152,13 @@ def start_alarm_config(display, rtc):
         led_pin=15,
     )
 
+
 def start_create_alarm(display, rtc):
     # Init alarm set process.
     # called from menu.py which wont know about context
     context = context_queue.dequeue()
     context.router_context["next_ui_id"] = "set_hour"
-    context.ui_context.update({
-        "header": "hour",
-        "min": 0,
-        "max": 24
-    })
+    context.ui_context.update({"header": "hour", "min": 0, "max": 24})
     context_queue.add_to_queue(context)
     return start_alarm_config(display, rtc)
 
@@ -170,13 +166,15 @@ def start_create_alarm(display, rtc):
 def start_alarm_menu(display):
     context = context_queue.dequeue()
     context.router_context["next_ui_id"] = "alarm_menu"
-    context.ui_context.update({
-        "header": "Alarm Menu",
-        "selectables": [
-            {"display_text": "New Alarm", "id": "new_alarm"},
-            {"display_text": "List", "id": "list_alarms"}
-        ]
-    })
+    context.ui_context.update(
+        {
+            "header": "Alarm Menu",
+            "selectables": [
+                {"display_text": "New Alarm", "id": "new_alarm"},
+                {"display_text": "List", "id": "list_alarms"},
+            ],
+        }
+    )
     context_queue.add_to_queue(context)
     return Menu(display, encoder_pins=(19, 18, 20), led_pin=15, id="alarm_menu")
 
@@ -187,23 +185,26 @@ def start_time_mode_config(display, rtc):
         rtc=rtc,
         encoder_pins=(19, 18, 20),
         led_pin=15,
-        header="Time Mode"
+        header="Time Mode",
     )
+
 
 def start_timezone_config(display, rtc):
     context = context_queue.dequeue()
     context.router_context["next_ui_id"] = "time_menu"
-    context.ui_context.update({
-        "header": "Time Menu",
-        "selectables": [
-            #{"display_text": "UTC", "id": "UTC"},
-            {"display_text": "CST", "id": "CST"},
-            #{"display_text": "CDT", "id": "CDT"},
-            {"display_text": "PST", "id": "PST"},
-        ]
-    })
+    context.ui_context.update(
+        {
+            "header": "Time Menu",
+            "selectables": [
+                # {"display_text": "UTC", "id": "UTC"},
+                {"display_text": "CST", "id": "CST"},
+                # {"display_text": "CDT", "id": "CDT"},
+                {"display_text": "PST", "id": "PST"},
+            ],
+        }
+    )
     context_queue.add_to_queue(context)
-    #return Menu(display, encoder_pins=(19, 18, 20), led_pin=15, id="time_menu")
+    # return Menu(display, encoder_pins=(19, 18, 20), led_pin=15, id="time_menu")
     return TimeZoneConfig(
         display=display,
         rtc=rtc,
@@ -215,13 +216,18 @@ def start_timezone_config(display, rtc):
 def start_radio_menu(display):
     context = context_queue.dequeue()
     context.router_context["next_ui_id"] = "radio_menu"
-    context.ui_context.update({
-        "header": "Radio Menu",
-        "selectables": [
-            {"display_text": "Volume", "id": "set_volume"},
-            {"display_text": "Set Frequency", "id": "set_frequency"}  # Added new selectable
-        ]
-    })
+    context.ui_context.update(
+        {
+            "header": "Radio Menu",
+            "selectables": [
+                {"display_text": "Volume", "id": "set_volume"},
+                {
+                    "display_text": "Set Frequency",
+                    "id": "set_frequency",
+                },  # Added new selectable
+            ],
+        }
+    )
     context_queue.add_to_queue(context)
     return Menu(display, encoder_pins=(19, 18, 20), led_pin=15, id="radio_menu")
 
@@ -233,8 +239,8 @@ def start_frequency_config(display, radio_control):
         ui_context={
             "header": "integer_part",
             "min": 88,
-            "max": 108  # Range for FM frequency settings
-        }
+            "max": 108,  # Range for FM frequency settings
+        },
     )
     context_queue.add_to_queue(context)
 
@@ -243,7 +249,7 @@ def start_frequency_config(display, radio_control):
         radio_control=radio_control,
         encoder_pins=(19, 18, 20),
         led_pin=15,
-        id="set_frequency"
+        id="set_frequency",
     )
 
 
@@ -254,8 +260,8 @@ def start_frequency_fractional_config(display, radio_control):
         ui_context={
             "header": "fractional_part",
             "min": 0,
-            "max": 9  # Range for the fractional part of the frequency
-        }
+            "max": 9,  # Range for the fractional part of the frequency
+        },
     )
     context_queue.add_to_queue(context)
 
@@ -264,7 +270,7 @@ def start_frequency_fractional_config(display, radio_control):
         radio_control=radio_control,
         encoder_pins=(19, 18, 20),
         led_pin=15,
-        id="set_frequency_fractional"
+        id="set_frequency_fractional",
     )
 
 
@@ -275,26 +281,24 @@ def start_main_menu(display):
         context = Context(router_context={}, ui_context={})
 
     context.router_context["next_ui_id"] = "main_menu"
-    context.ui_context.update({
-        "header": "Main Menu",
-        "selectables": [
-            {"display_text": "Date", "id": "date_menu"},
-            {"display_text": "Time", "id": "time_menu"},
-            {"display_text": "Radio", "id": "radio_menu"}
-        ]
-    })
+    context.ui_context.update(
+        {
+            "header": "Main Menu",
+            "selectables": [
+                {"display_text": "Date", "id": "date_menu"},
+                {"display_text": "Time", "id": "time_menu"},
+                {"display_text": "Radio", "id": "radio_menu"},
+            ],
+        }
+    )
     context_queue.add_to_queue(context)
     return Menu(display, encoder_pins=(19, 18, 20), led_pin=15, id="main_menu")
 
 
 def start_set_time(display, rtc):
     context = context_queue.dequeue()
-    context.router_context["next_ui_id"] = ""#"set_hour"
-    context.ui_context.update({
-        "header": "hour",
-        "min": 0,
-        "max": 23
-    })
+    context.router_context["next_ui_id"] = ""  # "set_hour"
+    context.ui_context.update({"header": "hour", "min": 0, "max": 23})
     context_queue.add_to_queue(context)
     return start_time_config(display, rtc)
 
@@ -307,25 +311,26 @@ def start_time_config(display, rtc):
         led_pin=15,
     )
 
+
 def start_set_date(display, rtc):
     context = context_queue.dequeue()
     context.router_context["next_ui_id"] = ""
-    context.ui_context.update({
-        "header": "year",
-        "min": 2024,
-        "max": 2040,
-    })
+    context.ui_context.update(
+        {
+            "header": "year",
+            "min": 2024,
+            "max": 2040,
+        }
+    )
     context_queue.add_to_queue(context)
     return start_date_config(display, rtc)
 
+
 def start_date_config(display, rtc):
     return DateConfig(
-        display=display,
-        rtc=rtc,
-        encoder_pins=(19, 18, 20),
-        led_pin=15,
-        id="set_date"
+        display=display, rtc=rtc, encoder_pins=(19, 18, 20), led_pin=15, id="set_date"
     )
+
 
 menu_map = {
     "new_date": start_set_date,
@@ -358,4 +363,3 @@ auxiliary_menu_map = {
     "alarm_disable": start_alarm_disable_config,
     "snooze": start_snooze_config,
 }
-

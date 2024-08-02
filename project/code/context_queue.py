@@ -37,8 +37,13 @@ reporting_queue = ContextQueue()
 # Basic usage example for testing
 if __name__ == "__main__":
     # Create some context objects
-    context1 = Context(router_context={"next_ui_id": "main_menu"}, ui_context={"header": "Main Menu"})
-    context2 = Context(router_context={"next_ui_id": "settings_menu"}, ui_context={"header": "Settings Menu"})
+    context1 = Context(
+        router_context={"next_ui_id": "main_menu"}, ui_context={"header": "Main Menu"}
+    )
+    context2 = Context(
+        router_context={"next_ui_id": "settings_menu"},
+        ui_context={"header": "Settings Menu"},
+    )
 
     # Enqueue the context objects
     context_queue.add_to_queue(context1)

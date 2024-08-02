@@ -1,5 +1,7 @@
-from ssd1306 import SSD1306_SPI  # this is the driver library and the corresponding class
-import framebuf  # this is another library for the display. 
+from ssd1306 import (
+    SSD1306_SPI,
+)  # this is the driver library and the corresponding class
+import framebuf  # this is another library for the display.
 from machine import Pin, SPI
 import utime
 
@@ -7,7 +9,7 @@ import utime
 SCREEN_WIDTH = 128
 SCREEN_HEIGHT = 64
 
-# SPI Device ID can be 0 or 1. It must match the wiring. 
+# SPI Device ID can be 0 or 1. It must match the wiring.
 SPI_DEVICE = 0
 
 
@@ -24,7 +26,6 @@ class CR_SPI_Display:
         screen_height=64,
         baudrate=100000,
     ):
-
         """
         Args:
             screen_width (int): Define # of pixel columns of the oled display.
@@ -42,20 +43,15 @@ class CR_SPI_Display:
         self.dev = spi_dev
 
         # Initialize I/O pins associated with the oled display SPI interface
-        self.sck = Pin(spi_sck)  
+        self.sck = Pin(spi_sck)
         self.sda = Pin(spi_sda)
         # NOTE: hooked up res to what would normally be rx gp4
-        self.res = Pin(res)  
+        self.res = Pin(res)
         self.dc = Pin(dc)
         self.cs = Pin(spi_cs)
 
         # initialize the SPI interface for the OLED display
-        oled_spi = SPI(
-            self.dev,
-            self.baudrate,
-            sck=self.sck,
-            mosi=self.sda
-        )
+        oled_spi = SPI(self.dev, self.baudrate, sck=self.sck, mosi=self.sda)
 
         # Initialize the display
         self.oled = SSD1306_SPI(
@@ -65,9 +61,9 @@ class CR_SPI_Display:
             self.dc,
             self.res,
             self.cs,
-            False #external_vcc=False
+            False,  # external_vcc=False
         )
-        #self.enable()
+        # self.enable()
         # Set display pixel to character multiplier
         # https://docs.micropython.org/en/latest/library/framebuf.html
         # see Framebuffer.text
@@ -77,9 +73,9 @@ class CR_SPI_Display:
         # Set maximum limits for columns and rows in terms of chars
         self.max_columns = self.oled.width // self.char_width_px
         self.max_rows = self.oled.height // self.char_height_px
-        
-        #print(f"max columns: {self.max_columns}")
-        #print(f"max rows: {self.max_rows}")
+
+        # print(f"max columns: {self.max_columns}")
+        # print(f"max rows: {self.max_rows}")
 
     def clear(self):
         """
@@ -101,7 +97,6 @@ class CR_SPI_Display:
         # prevent multiple recursion error
         if update_display:
             self.oled.show()
-        
 
     def _update_row(self, text, column, row, color=1, tab=True, update_display=True):
         """
@@ -119,7 +114,7 @@ class CR_SPI_Display:
         self.oled.text(text, x, y, color)
         if update_display:
             self.oled.show()
-        
+
     def update_text(self, text, column, row, color=1):
         """
         Description:
@@ -127,7 +122,7 @@ class CR_SPI_Display:
         Check that row/column args to overrun configured display buffers.
         Framebuffer.text 8x8 pixel characters only.
         https://docs.micropython.org/en/latest/library/framebuf.html
-        
+
         # NOTE: the current SSD1306 module and framebuf library we are
         # using do not support different fonts out of the box. Instead, we need to
         # manually implement a way to handle different fonts for different sizes.
@@ -145,7 +140,7 @@ class CR_SPI_Display:
             row = 0
         elif row >= self.max_rows:
             row = self.max_rows - 1
-        
+
         # Clear the specified row without updating the display immediately
         self._clear_row(row, update_display=False)
         # Update the row without updating the display immediately
@@ -153,14 +148,14 @@ class CR_SPI_Display:
 
         # Update the display
         self.oled.show()
-        
+
     def enable(self):
         self.oled.poweron()
 
     def release(self):
         self.clear()
-        #self.oled.poweroff()
-        #print("poweroff complete")
+        # self.oled.poweroff()
+        # print("poweroff complete")
 
 
 class CR_SPI_Display_Second(CR_SPI_Display):
@@ -176,11 +171,21 @@ class CR_SPI_Display_Second(CR_SPI_Display):
         dc=12,
         baudrate=100000,
     ):
-        super().__init__(spi_sck, spi_sda, spi_cs, spi_dev, res, dc, screen_width, screen_height, baudrate)
+        super().__init__(
+            spi_sck,
+            spi_sda,
+            spi_cs,
+            spi_dev,
+            res,
+            dc,
+            screen_width,
+            screen_height,
+            baudrate,
+        )
 
-# Usage example:
+
 if __name__ == "__main__":
-    
+
     # Initialize clock radio display for SPI
     display = CR_SPI_Display(
         screen_width=SCREEN_WIDTH,
@@ -190,7 +195,7 @@ if __name__ == "__main__":
         spi_sda=3,
         spi_cs=5,
         res=4,
-        dc=6
+        dc=6,
     )
 
     # Call the update_text method
@@ -203,9 +208,7 @@ if __name__ == "__main__":
     display.oled.vline(16, 2, 22, 1)
     display.oled.vline(23, 8, 22, 1)
     display.oled.fill_rect(26, 24, 2, 4, 1)
-    display.oled.text('ECE 299', 40, 0, 1)
-    display.oled.text('SSD1306', 40, 12, 1)
-    display.oled.text('OLED 128x64', 40, 24, 1)
+    display.oled.text("ECE 299", 40, 0, 1)
+    display.oled.text("SSD1306", 40, 12, 1)
+    display.oled.text("OLED 128x64", 40, 24, 1)
     display.oled.show()
-
-

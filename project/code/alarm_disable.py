@@ -18,27 +18,27 @@ class AlarmDisable(UI):
 
         # Load context and populate properties
         self.ui_context = self.load_context()
-        
+
         # Default to "Disable Alarm" if not provided
         self.header = self.ui_context.get("header", "Turn off Alarm?")
         self.min = self.ui_context.get("min", 0)
         self.max = self.ui_context.get("max", 1)
-        
+
         # hardcode this for now
-        self.current_value = 1 #self.min
-        
+        self.current_value = 1  # self.min
+
         # Initialize the encoder
         try:
             self.encoder = RotaryEncoder(
-                pin_a=encoder_pins[0], 
-                pin_b=encoder_pins[1], 
-                pin_switch=encoder_pins[2], 
-                led_pin=led_pin, 
+                pin_a=encoder_pins[0],
+                pin_b=encoder_pins[1],
+                pin_switch=encoder_pins[2],
+                led_pin=led_pin,
                 rollover=True,
                 max=self.max,
                 min=self.min,
-                button_callback=self.button_release, # method called here on button click
-                on_release=True # tell button class to respond to release
+                button_callback=self.button_release,  # method called here on button click
+                on_release=True,  # tell button class to respond to release
             )
         except Exception as e:
             sys.print_exception(e)
@@ -54,7 +54,9 @@ class AlarmDisable(UI):
         """
         context = context_queue.dequeue()
         if context:
-            print(f"alarm_disable,load_context,dequeue\n{context.router_context}\n{context.ui_context}\n{context_queue.size()}")
+            print(
+                f"alarm_disable,load_context,dequeue\n{context.router_context}\n{context.ui_context}\n{context_queue.size()}"
+            )
         else:
             print("alarm_disable,load_context,dequeue: No context available")
 
@@ -69,7 +71,7 @@ class AlarmDisable(UI):
         """
         self.display.clear()
         self.display.update_text(self.header, 0, 0)
-        #text_value = "Yes" if self.current_value else "No"
+        # text_value = "Yes" if self.current_value else "No"
         text_value = "Yes"
         self.display.update_text(text_value, 0, 1)
 
@@ -86,16 +88,18 @@ class AlarmDisable(UI):
 
     def build_context(self):
         next_ui_id = "main_menu"
-        
+
         ui_context = {
             "header": "Main Menu",
             "selectables": [
                 {"display_text": "Time", "id": "time_menu"},
-                {"display_text": "Radio", "id": "radio_menu"}
-            ]
+                {"display_text": "Radio", "id": "radio_menu"},
+            ],
         }
         router_context = {"next_ui_id": next_ui_id}
-        context_queue.add_to_queue(Context(router_context=router_context, ui_context=ui_context))
+        context_queue.add_to_queue(
+            Context(router_context=router_context, ui_context=ui_context)
+        )
 
     def is_encoder_button_pressed(self):
         if self.encoder.get_button_state():
@@ -103,7 +107,7 @@ class AlarmDisable(UI):
         return False
 
     def reset(self):
-        self.current_value = 1 #self.min
+        self.current_value = 1  # self.min
         self.update_display()
 
     def stop(self):

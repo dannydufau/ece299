@@ -20,9 +20,7 @@ class LED:
         self.led.value(self.state)
         if duration_ms:
             self.timer.init(
-                mode=Timer.ONE_SHOT,
-                period=duration_ms,
-                callback=lambda t: self.off()
+                mode=Timer.ONE_SHOT, period=duration_ms, callback=lambda t: self.off()
             )
 
     def is_on(self):

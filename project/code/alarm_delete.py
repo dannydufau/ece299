@@ -20,7 +20,7 @@ class AlarmDelete(UI):
         header="Delete Alarm",
         min=0,
         max=1,
-        next_config={"id": "main_menu", "display_text": "Main Menu"}
+        next_config={"id": "main_menu", "display_text": "Main Menu"},
     ):
         self.display = display
         self.rtc = rtc
@@ -38,17 +38,17 @@ class AlarmDelete(UI):
 
         # Create an instance of the RotaryEncoder
         self.encoder = RotaryEncoder(
-            pin_a=encoder_pins[0], 
-            pin_b=encoder_pins[1], 
-            pin_switch=encoder_pins[2], 
-            led_pin=led_pin, 
-            rollover=True, 
-            max=max, 
+            pin_a=encoder_pins[0],
+            pin_b=encoder_pins[1],
+            pin_switch=encoder_pins[2],
+            led_pin=led_pin,
+            rollover=True,
+            max=max,
             min=min,
-            button_callback=self.button_release, # method called here on button click
-            on_release=True # tell button class to respond to release
+            button_callback=self.button_release,  # method called here on button click
+            on_release=True,  # tell button class to respond to release
         )
-        #print("IN DELETE")
+        # print("IN DELETE")
 
     def load_context(self):
         """
@@ -56,7 +56,9 @@ class AlarmDelete(UI):
         """
         context = context_queue.dequeue()
         if context:
-            print(f"alarm_delete,load_context,dequeue\n{context.router_context}\n{context.ui_context}\n{context_queue.size()}")
+            print(
+                f"alarm_delete,load_context,dequeue\n{context.router_context}\n{context.ui_context}\n{context_queue.size()}"
+            )
         else:
             print("alarm_delete,load_context,dequeue: No context available")
 
@@ -83,30 +85,32 @@ class AlarmDelete(UI):
 
     def build_context(self):
         next_ui_id = "main_menu"
-        
+
         ui_context = {
             "header": "Main Menu",
             "selectables": [
                 {"display_text": "Time", "id": "time_menu"},
-                {"display_text": "Radio", "id": "radio_menu"}
-            ]
+                {"display_text": "Radio", "id": "radio_menu"},
+            ],
         }
         router_context = {"next_ui_id": next_ui_id}
-        context_queue.add_to_queue(Context(router_context=router_context, ui_context=ui_context))
-                    
-    #def select_action(self):
+        context_queue.add_to_queue(
+            Context(router_context=router_context, ui_context=ui_context)
+        )
+
+    # def select_action(self):
     def button_release(self):
         if self.current_value == 0:
             print("should next config should be main")
         else:
-            #self.delete_alarm()
+            # self.delete_alarm()
             print(f"delete_alarm: {self.alarm_id}")
             self.rtc.delete_alarm(self.alarm_id)
         self.build_context()
-        
+
         # Do we need these next two lines?
         self.encoder.reset_counter()
-        #self.update_display() # max recursion
+        # self.update_display() # max recursion
 
         return self.ui_context
 

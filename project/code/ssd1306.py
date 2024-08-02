@@ -5,7 +5,6 @@ import framebuf
 import utime
 
 
-
 # register definitions
 SET_CONTRAST = const(0x81)
 SET_ENTIRE_ON = const(0xA4)
@@ -25,6 +24,7 @@ SET_DISP_CLK_DIV = const(0xD5)
 SET_PRECHARGE = const(0xD9)
 SET_VCOM_DESEL = const(0xDB)
 SET_CHARGE_PUMP = const(0x8D)
+
 
 # Subclassing FrameBuffer provides support for graphics primitives
 # http://docs.micropython.org/en/latest/pyboard/library/framebuf.html
@@ -95,11 +95,11 @@ class SSD1306(framebuf.FrameBuffer):
         self.write_cmd(SET_SEG_REMAP | (rotate & 1))
 
     def show(self):
-        for Page in range( 0, 8 ):
-            self.write_cmd( 0xB0 | ( Page & 0x0F ))
-            self.write_cmd( 0x02 )
-            self.write_cmd( 0x10 )
-            self.write_data( self.buffer[Page<<7:(Page<<7)+128] )
+        for Page in range(0, 8):
+            self.write_cmd(0xB0 | (Page & 0x0F))
+            self.write_cmd(0x02)
+            self.write_cmd(0x10)
+            self.write_data(self.buffer[Page << 7 : (Page << 7) + 128])
 
 
 class SSD1306_I2C(SSD1306):
@@ -117,15 +117,16 @@ class SSD1306_I2C(SSD1306):
 
     def write_data(self, buf):
         Page = 0
-        
-        for Page in range( 0, 8 ):
-            self.i2c.writeto_mem( 0x3C, 0x80, ( 0xB0 | ( Page & 0x0F ) ).to_bytes(1, 0 ))
-            self.i2c.writeto_mem( 0x3C, 0x80, b'\x02' )
-            self.i2c.writeto_mem( 0x3C, 0x80, b'\x10' )
-            buf1 = buf[Page<<7:(Page<<7)+128]
+
+        for Page in range(0, 8):
+            self.i2c.writeto_mem(0x3C, 0x80, (0xB0 | (Page & 0x0F)).to_bytes(1, 0))
+            self.i2c.writeto_mem(0x3C, 0x80, b"\x02")
+            self.i2c.writeto_mem(0x3C, 0x80, b"\x10")
+            buf1 = buf[Page << 7 : (Page << 7) + 128]
             self.write_list[1] = buf1
-            
-            self.i2c.writevto( 0x3C, self.write_list )
+
+            self.i2c.writevto(0x3C, self.write_list)
+
 
 class SSD1306_SPI(SSD1306):
     def __init__(self, width, height, spi, dc, res, cs, external_vcc=False):
@@ -148,7 +149,7 @@ class SSD1306_SPI(SSD1306):
 
     def write_cmd(self, cmd):
         """
-        When DC is low -> incoming bytes are 'command': 
+        When DC is low -> incoming bytes are 'command':
             control various settings of the display.
         """
         self.spi.init(baudrate=self.rate, polarity=0, phase=0)

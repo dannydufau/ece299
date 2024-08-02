@@ -5,7 +5,20 @@ import sys
 
 
 class UI:
-    def __init__(self, screen_width, screen_height, spi_device, spi_sck, spi_sda, spi_cs, res, dc, encoder_pins, led_pin, header):
+    def __init__(
+        self,
+        screen_width,
+        screen_height,
+        spi_device,
+        spi_sck,
+        spi_sda,
+        spi_cs,
+        res,
+        dc,
+        encoder_pins,
+        led_pin,
+        header,
+    ):
         self.screen_width = screen_width
         self.screen_height = screen_height
         self.spi_device = spi_device
@@ -39,4 +52,3 @@ class UI:
             self.encoder.button.disable_irq()
         if self.display:
             self.display.clear()
-

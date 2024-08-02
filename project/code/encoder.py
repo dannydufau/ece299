@@ -2,7 +2,7 @@ from machine import Pin, Timer
 import utime
 from button import Button
 from led import LED
-    
+
 
 class RotaryEncoder:
     """
@@ -13,22 +13,22 @@ class RotaryEncoder:
     discarded as noise after timeout.  If a quadrature is discovered, we report the
     decoded direction and incr/decr the dial counter.
     In our testing, less than a full quadrature (edge transition) could be triggered
-    with subtle dial movements, making an overly sensitive encoder.  
+    with subtle dial movements, making an overly sensitive encoder.
     """
-    
+
     def __init__(
         self,
         pin_a,
         pin_b,
         pin_switch,
         led_pin,
-        on_release=False, # trigger button callback on release -> True
+        on_release=False,  # trigger button callback on release -> True
         rollover=True,
         max=10,
         min=1,
         qtimeout_ms=150,
         button_callback=None,
-        button_identity=None
+        button_identity=None,
     ):
         """
         Args:
@@ -51,7 +51,7 @@ class RotaryEncoder:
         self.rollover = rollover
         self.max = max
         self.min = min
-        #self.counter = 0
+        # self.counter = 0
         self.counter = self.min
         self.direction = ""
         self.state = (self.pin_a.value() * 2) + self.pin_b.value()
@@ -66,20 +66,24 @@ class RotaryEncoder:
         self.encoder_timer = Timer(-1)
         self.debounce_delay_ms = 2
 
-        self.pin_a.irq(trigger=Pin.IRQ_RISING | Pin.IRQ_FALLING, handler=self.encoder_irq)
-        self.pin_b.irq(trigger=Pin.IRQ_RISING | Pin.IRQ_FALLING, handler=self.encoder_irq)
+        self.pin_a.irq(
+            trigger=Pin.IRQ_RISING | Pin.IRQ_FALLING, handler=self.encoder_irq
+        )
+        self.pin_b.irq(
+            trigger=Pin.IRQ_RISING | Pin.IRQ_FALLING, handler=self.encoder_irq
+        )
 
         # Initialize the Button instance
         self.programmed_callback = button_callback
         self.identity = button_identity if button_identity else "encoder_button"
-        
+
         self.button = Button(
             button_pin=pin_switch,
             led_pin=led_pin,
             callback=self.button_callback,
             identity=self.identity,
             debounce_time_ms=10,
-            on_release=on_release # class property?
+            on_release=on_release,  # class property?
         )
 
     def get_counter(self):
@@ -89,7 +93,7 @@ class RotaryEncoder:
     def set_counter(self, value):
         if self.min <= value <= self.max:
             self.counter = value
-            
+
     def get_button_state(self):
         return self.button.button.value() == 0  # ACTIVE LOW
 
@@ -105,11 +109,11 @@ class RotaryEncoder:
             self.encoder_timer.init(
                 mode=Timer.ONE_SHOT,
                 period=self.debounce_delay_ms,
-                callback=self.process_encoder
+                callback=self.process_encoder,
             )
 
     def update_counter(self, increment):
-        
+
         if increment:
             self.counter += 1
             self.direction = "Clockwise"
@@ -171,24 +175,28 @@ class RotaryEncoder:
             # Check for a complete encoder cycle
             if self.transition_count == 4:
                 self.transition_count = 0
-                
+
                 self.led.on_ms(50)
                 # Determine direction and update counter
                 # Clockwise transitions
-                if ((self.last_state == 0 and state == 1) or
-                    (self.last_state == 1 and state == 3) or
-                    (self.last_state == 3 and state == 2) or
-                    (self.last_state == 2 and state == 0)):
+                if (
+                    (self.last_state == 0 and state == 1)
+                    or (self.last_state == 1 and state == 3)
+                    or (self.last_state == 3 and state == 2)
+                    or (self.last_state == 2 and state == 0)
+                ):
                     self.update_counter(True)
                 # Counterclockwise transitions
-                elif ((self.last_state == 0 and state == 2) or
-                      (self.last_state == 2 and state == 3) or
-                      (self.last_state == 3 and state == 1) or
-                      (self.last_state == 1 and state == 0)):
+                elif (
+                    (self.last_state == 0 and state == 2)
+                    or (self.last_state == 2 and state == 3)
+                    or (self.last_state == 3 and state == 1)
+                    or (self.last_state == 1 and state == 0)
+                ):
                     self.update_counter(False)
-                
-                #print("Counter: ", self.counter, " | Direction: ", self.direction)
-                #print("\n")
+
+                # print("Counter: ", self.counter, " | Direction: ", self.direction)
+                # print("\n")
 
             self.last_state = state
 
@@ -197,13 +205,12 @@ class RotaryEncoder:
     def button_callback(self, identity):
         if callable(self.programmed_callback):
             self.programmed_callback()
-        #print(f"encoder button callback: {identity}")
+        # print(f"encoder button callback: {identity}")
 
     def reset_counter(self):
         self.counter = self.min
         self.direction = ""
-        #self.update_callback(self.counter, self.direction)
-
+        # self.update_callback(self.counter, self.direction)
 
 
 # Usage example:
@@ -213,6 +220,5 @@ if __name__ == "__main__":
 
     # Main loop
     while True:
-        #encoder.toggle_led()
+        # encoder.toggle_led()
         utime.sleep(1)
-

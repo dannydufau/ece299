@@ -21,7 +21,7 @@ class Menu(UI):
         self.display = display
         self.id = id
         self.cursor_icon = cursor
-        
+
         # Load context
         self.ui_context = self.load_context()
         self.header = self.ui_context.get("header")
@@ -36,15 +36,15 @@ class Menu(UI):
 
         try:
             self.encoder = RotaryEncoder(
-                pin_a=encoder_pins[0], 
-                pin_b=encoder_pins[1], 
-                pin_switch=encoder_pins[2], 
-                led_pin=led_pin, 
+                pin_a=encoder_pins[0],
+                pin_b=encoder_pins[1],
+                pin_switch=encoder_pins[2],
+                led_pin=led_pin,
                 rollover=True,
                 max=self.selectables_count,
                 min=1,
-                button_callback=self.button_release, # method called here on button click
-                on_release=True # tell button class to respond to release
+                button_callback=self.button_release,  # method called here on button click
+                on_release=True,  # tell button class to respond to release
             )
         except Exception as e:
             sys.print_exception(e)
@@ -67,29 +67,30 @@ class Menu(UI):
         if self._get_cursor_position_modulus() != self.last_count:
             return True
         return False
-    
+
     def _update_cursor_to_current_selection(self, current_count):
         # Store the original texts
         original_texts = []
         for selectable in self.selectables:
             original_texts.append(selectable["display_text"])
-            
+
         # Update the selected item's display text with the cursor icon
         print(f"selectables: {self.selectables}")
-        #if current_count >= 0:  # ignore header
-        #    self.selectables[current_count]["display_text"] = f"{self.cursor_icon} {self.selectables[current_count]['display_text']}"    
-    
+        # if current_count >= 0:  # ignore header
+        #    self.selectables[current_count]["display_text"] = f"{self.cursor_icon} {self.selectables[current_count]['display_text']}"
+
         if current_count > 0:  # Adjusted to properly ignore the header
             index = current_count - 1
-            self.selectables[index]["display_text"] = f"{self.cursor_icon} {self.selectables[index]['display_text']}"
-                
-    
+            self.selectables[index][
+                "display_text"
+            ] = f"{self.cursor_icon} {self.selectables[index]['display_text']}"
+
         # Update the display
         self.display.update_text(self.header, 0, 0)
         col = 0
         for i, selectable in enumerate(self.selectables):
             self.display.update_text(selectable["display_text"], col, i + 1)
-        
+
         # Restore the original texts
         for i, selectable in enumerate(self.selectables):
             selectable["display_text"] = original_texts[i]
@@ -104,7 +105,7 @@ class Menu(UI):
             self._update_count_and_display(current_count)
             return True
         return False
-    
+
     def is_encoder_button_pressed(self):
         # being replaced by button_release
         if self.encoder.get_button_state():
@@ -116,7 +117,7 @@ class Menu(UI):
         Dequeue context from the queue and return the ui_context.
         """
         context = context_queue.dequeue()
-        #print(f"menu.py,load_context,dequeue\n{context.router_context}\n{context.ui_context}\n{context_queue.size()}")
+        # print(f"menu.py,load_context,dequeue\n{context.router_context}\n{context.ui_context}\n{context_queue.size()}")
 
         if isinstance(context, Context):
             return context.ui_context
@@ -132,16 +133,22 @@ class Menu(UI):
             context_cp.update(self.selected_item["context"])
 
         next_ui_id = self.selected_item["id"]
-        context = Context(router_context={"next_ui_id": next_ui_id}, ui_context=context_cp)
+        context = Context(
+            router_context={"next_ui_id": next_ui_id}, ui_context=context_cp
+        )
         context_queue.add_to_queue(context)
-        print(f"menu.py,build_context,add\n{context.router_context}\n{context.ui_context}\n{context_queue.size()}")
+        print(
+            f"menu.py,build_context,add\n{context.router_context}\n{context.ui_context}\n{context_queue.size()}"
+        )
 
         return context
 
     def button_release(self):
         print("IN BUTTON_RELEASE")
-        #self.select_action()
-        self.selected_index = self.encoder.get_counter()[0] - 1  # Adjusted for zero-based index
+        # self.select_action()
+        self.selected_index = (
+            self.encoder.get_counter()[0] - 1
+        )  # Adjusted for zero-based index
         self.selected_item = self.selectables[self.selected_index]
         self.build_context()
 

@@ -11,7 +11,13 @@ class Logger:
     WARNING = 30
     ERROR = 40
 
-    def __init__(self, stdout_file="stdout.txt", stderr_file="stderr.txt", level=DEBUG, max_size=1024):
+    def __init__(
+        self,
+        stdout_file="stdout.txt",
+        stderr_file="stderr.txt",
+        level=DEBUG,
+        max_size=1024,
+    ):
         self.stdout_file = stdout_file
         self.stderr_file = stderr_file
         self.level = level
@@ -20,8 +26,12 @@ class Logger:
     def _get_timestamp(self):
         current_time = utime.localtime()
         return "{:04}-{:02}-{:02} {:02}:{:02}:{:02}".format(
-            current_time[0], current_time[1], current_time[2],
-            current_time[3], current_time[4], current_time[5]
+            current_time[0],
+            current_time[1],
+            current_time[2],
+            current_time[3],
+            current_time[4],
+            current_time[5],
         )
 
     def _write(self, message, file_path):
@@ -46,7 +56,7 @@ class Logger:
     def debug(self, message):
         if self.level <= Logger.DEBUG:
             log_message = f"{self._get_timestamp()} DEBUG: {message}"
-            #self._write(log_message, self.stdout_file)
+            # self._write(log_message, self.stdout_file)
 
             # Also print to console
             print(log_message)
@@ -54,22 +64,22 @@ class Logger:
     def info(self, message):
         if self.level <= Logger.INFO:
             log_message = f"{self._get_timestamp()} INFO: {message}"
-            #self._write(log_message, self.stdout_file)
+            # self._write(log_message, self.stdout_file)
             print(log_message)
 
     def warning(self, message):
         if self.level <= Logger.WARNING:
             log_message = f"{self._get_timestamp()} WARNING: {message}"
-            #self._write(log_message, self.stdout_file)
+            # self._write(log_message, self.stdout_file)
             print(log_message)
 
     def error(self, e, message=""):
         log_message = f"[ERROR] {self._get_timestamp()} - {message}\n"
-        #self._write(log_message, self.stderr_file)
+        # self._write(log_message, self.stderr_file)
         print(log_message)
         sys.print_exception(e)
 
-        #with open(self.stderr_file, "a") as f:
+        # with open(self.stderr_file, "a") as f:
         #    sys.print_exception(e, f)
 
     def set_level(self, level):
@@ -87,8 +97,7 @@ if __name__ == "__main__":
 
     logger.set_level(Logger.DEBUG)
     logger.debug("This debug message will now be logged.")
-    
-    
+
     # Test error
     logger = Logger(level=Logger.INFO, max_size=2048)
 
@@ -96,7 +105,7 @@ if __name__ == "__main__":
     logger.info("This is an info message.")
     key = []
     try:
-        #raise ValueError("This is an error message.")
+        # raise ValueError("This is an error message.")
         key[1]
     except Exception as e:
         logger.error(e, "oops")
