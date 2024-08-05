@@ -5,7 +5,20 @@ import sys
 
 
 class UI:
-    def __init__(self, screen_width, screen_height, spi_device, spi_sck, spi_sda, spi_cs, res, dc, encoder_pins, led_pin, header):
+    def __init__(
+        self,
+        screen_width,
+        screen_height,
+        spi_device,
+        spi_sck,
+        spi_sda,
+        spi_cs,
+        res,
+        dc,
+        encoder_pins,
+        led_pin,
+        header,
+    ):
         self.screen_width = screen_width
         self.screen_height = screen_height
         self.spi_device = spi_device
@@ -18,15 +31,24 @@ class UI:
         self.led_pin = led_pin
         self.header = header
         self.display = None
+        self.encoder = None
 
     def poll_selection_change_and_update_display(self):
         raise NotImplementedError
 
-    def get_selection(self):
+    def select_actionNOTUSING(self):
+        raise NotImplementedError
+
+    def button_release(self):
         raise NotImplementedError
 
     def is_encoder_button_pressed(self):
         raise NotImplementedError
 
     def stop(self):
-        raise NotImplementedError
+        if self.encoder:
+            self.encoder.pin_a.irq(handler=None)
+            self.encoder.pin_b.irq(handler=None)
+            self.encoder.button.disable_irq()
+        if self.display:
+            self.display.clear()

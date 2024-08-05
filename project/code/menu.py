@@ -5,11 +5,8 @@ from ui import UI
 import copy
 import time
 import sys
-
-#from ui import UI
-#import copy
-#import sys
-#from encoder import RotaryEncoder
+from context_queue import context_queue
+from context import Context
 
 
 class Menu(UI):
@@ -18,40 +15,51 @@ class Menu(UI):
         display,
         encoder_pins,
         led_pin,
-        header,
-        selectables,
         id,
-        cursor=">"
+        cursor=">",
     ):
         self.display = display
-        self.header = header
-        self.selectables = selectables
-        self.selectables_count = len(selectables)
-        self.cursor_icon = cursor
         self.id = id
+        self.cursor_icon = cursor
+
+        # Load context
+        self.ui_context = self.load_context()
+        self.header = self.ui_context.get("header")
+        self.selectables = self.ui_context.get("selectables")
+        self.selectables_count = len(self.selectables) if self.selectables else 0
+
+        self.selected_index = None
+        self.selected_item = None
+
+        print(f"IN MENU: {self.header}")
+        print(f"IN MENU: {self.selectables}")
 
         try:
             self.encoder = RotaryEncoder(
-                pin_a=encoder_pins[0], 
-                pin_b=encoder_pins[1], 
-                pin_switch=encoder_pins[2], 
-                led_pin=led_pin, 
-                rollover=True, 
-                max=self.selectables_count
+                pin_a=encoder_pins[0],
+                pin_b=encoder_pins[1],
+                pin_switch=encoder_pins[2],
+                led_pin=led_pin,
+                rollover=True,
+                max=self.selectables_count,
+                min=1,
+                button_callback=self.button_release,  # method called here on button click
+                on_release=True,  # tell button class to respond to release
             )
         except Exception as e:
             sys.print_exception(e)
             print("ENCODER NOT CREATED FOR MENU")
             raise
-        
+
+        # Display header on row 0
+        self.display.clear()
+        self.display.update_text(self.header, 0, 0)
+
         self.last_count = self._get_cursor_position_modulus()
         self._update_count_and_display(self.last_count)
-        
+
     def _get_cursor_position_modulus(self):
         current_count = self.encoder.get_counter()[0]
-        current_count -= 1
-        if current_count < 0:
-            current_count = 0
         return current_count
 
     def _has_selection_changed(self):
@@ -59,16 +67,33 @@ class Menu(UI):
         if self._get_cursor_position_modulus() != self.last_count:
             return True
         return False
-    
+
     def _update_cursor_to_current_selection(self, current_count):
-        selectables = copy.deepcopy(list(self.selectables))
-        selected = selectables[current_count]
-        original_text = selected.get("display_text")
-        selected["display_text"] = f"{self.cursor_icon} {original_text}"
+        # Store the original texts
+        original_texts = []
+        for selectable in self.selectables:
+            original_texts.append(selectable["display_text"])
+
+        # Update the selected item's display text with the cursor icon
+        print(f"selectables: {self.selectables}")
+        # if current_count >= 0:  # ignore header
+        #    self.selectables[current_count]["display_text"] = f"{self.cursor_icon} {self.selectables[current_count]['display_text']}"
+
+        if current_count > 0:  # Adjusted to properly ignore the header
+            index = current_count - 1
+            self.selectables[index][
+                "display_text"
+            ] = f"{self.cursor_icon} {self.selectables[index]['display_text']}"
+
+        # Update the display
+        self.display.update_text(self.header, 0, 0)
         col = 0
-        for i in range(len(selectables)):
-            current = selectables[i]
-            self.display.update_text(current.get("display_text"), col, i)
+        for i, selectable in enumerate(self.selectables):
+            self.display.update_text(selectable["display_text"], col, i + 1)
+
+        # Restore the original texts
+        for i, selectable in enumerate(self.selectables):
+            selectable["display_text"] = original_texts[i]
 
     def _update_count_and_display(self, current_count):
         self.last_count = current_count
@@ -80,189 +105,57 @@ class Menu(UI):
             self._update_count_and_display(current_count)
             return True
         return False
-    
+
     def is_encoder_button_pressed(self):
-        return self.encoder.get_button_state()
-    
-    def get_selection(self):
-        selected_index = self._get_cursor_position_modulus()
-        print(f"get_selection: {self.selectables[selected_index]}")
-        return {"id": self.selectables[selected_index]["id"], "display_text": self.selectables[selected_index]["display_text"]}
+        # being replaced by button_release
+        if self.encoder.get_button_state():
+            return True
+        return False
 
-    def _disable_interrupts(self):
-        print("disable interrupts")
-        self.encoder.pin_a.irq(handler=None)
-        self.encoder.pin_b.irq(handler=None)
-        self.encoder.button.disable_irq()
+    def load_context(self):
+        """
+        Dequeue context from the queue and return the ui_context.
+        """
+        context = context_queue.dequeue()
+        # print(f"menu.py,load_context,dequeue\n{context.router_context}\n{context.ui_context}\n{context_queue.size()}")
 
-    def stop(self):
-        self._disable_interrupts()
+        if isinstance(context, Context):
+            return context.ui_context
 
+        return context if context else {}
 
-class MenuBak(UI):
-    def __init__(
-        self,
-        screen_width,
-        screen_height,
-        spi_device,
-        spi_sck,
-        spi_sda,
-        spi_cs,
-        res,
-        dc,
-        encoder_pins,
-        led_pin,
-        header,
-        selectables,
-        id,
-        cursor=">"
-    ):
-        super().__init__(screen_width, screen_height, spi_device, spi_sck, spi_sda, spi_cs, res, dc, encoder_pins, led_pin, header)
-        self.selectables = selectables
-        self.selectables_count = len(selectables)
-        self.cursor_icon = cursor
-        self.id = id
-        
-        # Initialize clock radio display for SPI
-        # doesn't work
-        #self.display = self.initialize_display(screen_width, screen_height, spi_device, spi_sck, spi_sda, spi_cs, res, dc)
-      
-        try:
-            self.display = CR_SPI_Display(
-                screen_width=screen_width,
-                screen_height=screen_height,
-                spi_dev=spi_device,
-                spi_sck=spi_sck,
-                spi_sda=spi_sda,
-                spi_cs=spi_cs,
-                res=res,
-                dc=dc
-            )
-        except Exception as e:
-            sys.print_exception(e)
-            print("DISPLAY NOT CREATED FOR MENU")
-            raise
-        
-        # Create an instance of the RotaryEncoder
-        self.encoder = RotaryEncoder(
-            pin_a=encoder_pins[0], 
-            pin_b=encoder_pins[1], 
-            pin_switch=encoder_pins[2], 
-            led_pin=led_pin, 
-            rollover=True, 
-            max=self.selectables_count # modulus rollover 
+    def build_context(self):
+        """
+        Build the context for the next UI.
+        """
+        context_cp = self.ui_context.copy()
+        if "context" in self.selected_item:
+            context_cp.update(self.selected_item["context"])
+
+        next_ui_id = self.selected_item["id"]
+        context = Context(
+            router_context={"next_ui_id": next_ui_id}, ui_context=context_cp
         )
-        self.last_count = self._get_cursor_position_modulus()
-        self._update_count_and_display(self.last_count)
-        
-    def _get_cursor_position_modulus(self):
-        """
-        Currently ignoring direction
-        """
-        current_count = self.encoder.get_counter()[0]
-        current_count -= 1
-        if current_count < 0:
-            current_count = 0
-        return current_count
+        context_queue.add_to_queue(context)
+        print(
+            f"menu.py,build_context,add\n{context.router_context}\n{context.ui_context}\n{context_queue.size()}"
+        )
 
-    def _has_selection_changed(self):
-        """
-        Description: selection currently maps to an encoder rotation
-        """
-        count = self.last_count
-        if self._get_cursor_position_modulus() != self.last_count:
-            return True
-        return False
-    
-    def _update_cursor_to_current_selection(self, current_count):
-        """
-        Shows cursor icon on currently selected item in menu
-        """
-        # Update cursor to reflect new selection
-        # Don't save the cursor modification the raw selectables list
-        selectables = copy.deepcopy(list(self.selectables))
-        selected = selectables[current_count]
-        #print(f"selected: {selected}")
+        return context
 
-        original_text = selected.get("display_text")
-        selected["display_text"] = f"{self.cursor_icon} {original_text}"
-        
-        # Update display for the number of selectable items present
-        col = 0
-        for i in range(len(selectables)):
-            current = selectables[i]
-            self.display.update_text(current.get("display_text"), col, i)
-
-        
-    def _update_count_and_display(self, current_count):
-        """
-        Call this to update last_count if user input detected
-        """
-        # Update last_count and cursor to rotated item
-        self.last_count = current_count
-        self._update_cursor_to_current_selection(current_count)
-
-
-    def poll_selection_change_and_update_display(self):
-        """
-        Check for user input change (encoder rotation) and update the
-        active selection appropriately. Should be called frequently by
-        caller thread.
-        Return (bool): False if a user input has not been detected.
-        """
-        current_count = self._get_cursor_position_modulus()
-        if self._has_selection_changed():
-            self._update_count_and_display(current_count)
-            return True
-        return False
-    
-    def is_encoder_button_pressed(self):
-        return self.encoder.get_button_state()
-    
-    def get_selection(self):
-        selected_index = self._get_cursor_position_modulus()
-        print(f"get_selection: {self.selectables[selected_index]}")
-        return {"id": self.selectables[selected_index]["id"], "display_text": self.selectables[selected_index]["display_text"]}
-
-
-    def _disable_interrupts(self):
-        print("disable interrupts")
-        self.encoder.pin_a.irq(handler=None)
-        self.encoder.pin_b.irq(handler=None)
-        #self.encoder.pin_switch.irq(handler=None)
-        self.encoder.button.disable_irq()
+    def button_release(self):
+        print("IN BUTTON_RELEASE")
+        # self.select_action()
+        self.selected_index = (
+            self.encoder.get_counter()[0] - 1
+        )  # Adjusted for zero-based index
+        self.selected_item = self.selectables[self.selected_index]
+        self.build_context()
 
     def stop(self):
-        self._disable_interrupts()
-        # TODO: loaded menu should have name property - log that menu was disabled.
-        #self.display.release()
-        #print("powered off....")
-
-'''
-    def track_encoder(self):
-        """
-        EXPIRED: this consumes the thread.  No while True loops here
-        Description: tracks current position of the encoder and
-            updates display.  We can stop/start polling the encoder position
-            with the tracking property to remap it to a new set of menu
-            'selectables' defined in the menu scheme.
-        """
-        while self.tracking:
-            current_count = self.get_cursor_position_modulus()
-
-            if current_count != self.last_count:
-                print(f"Counter changed: {current_count}")
-                self.last_count = current_count
-                self.update_display()
-                
-            time.sleep(0.1)
-        print("Exiting encoder tracking")
-
-    def stop_tracking(self):
-        # EXPIRED
-        self.tracking = False
-
-    def start_tracking(self):
-        # EXPIRED
-        self.tracking = True
-'''
+        if self.encoder:
+            self.encoder.pin_a.irq(handler=None)
+            self.encoder.pin_b.irq(handler=None)
+            self.encoder.button.disable_irq()
+        if self.display:
+            self.display.clear()

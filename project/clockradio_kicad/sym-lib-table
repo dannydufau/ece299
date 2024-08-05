@@ -1,4 +1,5 @@
 (sym_lib_table
   (version 7)
   (lib (name "ece299_project")(type "KiCad")(uri "${KIPRJMOD}/ece299_project.kicad_sym")(options "")(descr ""))
+  (lib (name "Tiny_RTC_DS1307_24C32")(type "KiCad")(uri "${KIPRJMOD}/Tiny_RTC_DS1307_24C32.kicad_sym")(options "")(descr ""))
 )
